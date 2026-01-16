@@ -29,5 +29,9 @@
         {
             "path": "./tsconfig.node.json"
         }
+    ],
+    "exclude": [
+        "src/**/*.test.tsx",
+        "src/**/*.test.ts"
     ]
 }

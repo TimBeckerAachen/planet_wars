@@ -52,3 +52,7 @@ jobs:
         DATABASE_URL: postgresql://user:password@localhost:5432/dbname
       run: |
         uv run pytest
+
+    - name: Build Docker image
+      run: docker build . -t planet-wars-backend
+      working-directory: ./backend
