@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest'
 import App from './App'
 
 // Mock fetch
-global.fetch = vi.fn()
+global.fetch = vi.fn(() => Promise.resolve({ json: () => Promise.resolve({}) })) as any
 
 function createFetchResponse(data: any) {
     return { json: () => new Promise((resolve) => resolve(data)) }
