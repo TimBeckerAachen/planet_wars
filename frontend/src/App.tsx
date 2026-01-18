@@ -5,7 +5,7 @@ function App() {
     const [loading, setLoading] = useState<boolean>(true)
 
     useEffect(() => {
-        fetch('http://localhost:8000/')
+        fetch('/api/')
             .then(res => res.json())
             .then(data => {
                 setData(data.message)

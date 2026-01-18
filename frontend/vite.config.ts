@@ -10,4 +10,13 @@ export default defineConfig({
         setupFiles: './src/test/setup.ts',
         css: true,
     },
+    server: {
+        proxy: {
+            '/api': {
+                target: 'http://localhost:8000',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api/, ''),
+            },
+        },
+    },
 })

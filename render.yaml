@@ -26,11 +26,7 @@ services:
     rootDir: frontend
     plan: free
     envVars:
-      - key: VITE_API_URL
-        fromService:
-          type: web
-          name: planetwars-backend
-          property: url
+
       - key: BACKEND_URL
         value: http://planetwars-backend:8000
 
