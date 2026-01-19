@@ -85,14 +85,14 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: Deploy Backend
-        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL_BACKEND }}
+        if: secrets.RENDER_DEPLOY_HOOK_URL_BACKEND
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_BACKEND }}
 
       - name: Deploy Frontend
-        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL_FRONTEND }}
+        if: secrets.RENDER_DEPLOY_HOOK_URL_FRONTEND
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL_FRONTEND }}
 
       - name: Check Secrets
-        if: ${{ !secrets.RENDER_DEPLOY_HOOK_URL_BACKEND && !secrets.RENDER_DEPLOY_HOOK_URL_FRONTEND }}
+        if: "!secrets.RENDER_DEPLOY_HOOK_URL_BACKEND && !secrets.RENDER_DEPLOY_HOOK_URL_FRONTEND"
         run: echo "No Render deploy hooks found (RENDER_DEPLOY_HOOK_URL_BACKEND or RENDER_DEPLOY_HOOK_URL_FRONTEND). Skipping deployment."
 
