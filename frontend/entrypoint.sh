@@ -9,9 +9,10 @@ echo "  BACKEND_HOST=${BACKEND_HOST:-NOT_SET}" >&2
 echo "  BACKEND_PORT=${BACKEND_PORT:-NOT_SET}" >&2
 
 # Set defaults if not provided
+# Note: Render free tier doesn't support private networking, so we use the public URL
 : ${PORT:=10000}
-: ${BACKEND_HOST:=planetwars-backend}
-: ${BACKEND_PORT:=8000}
+: ${BACKEND_HOST:=planetwars-backend.onrender.com}
+: ${BACKEND_PORT:=443}
 
 echo "After defaults:" >&2
 echo "  PORT=$PORT" >&2
