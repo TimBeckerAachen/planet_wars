@@ -28,7 +28,10 @@ services:
     envVars:
 
       - key: BACKEND_URL
-        value: http://planetwars-backend:8000
+        fromService:
+          type: web
+          name: planetwars-backend
+          property: hostport
 
     autoDeploy: false
 
