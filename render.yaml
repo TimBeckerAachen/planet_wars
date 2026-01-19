@@ -27,16 +27,11 @@ services:
     plan: free
     envVars:
 
-      - key: BACKEND_HOST
+      - key: BACKEND_HOSTPORT
         fromService:
           type: web
           name: planetwars-backend
-          property: host
-      - key: BACKEND_PORT
-        fromService:
-          type: web
-          name: planetwars-backend
-          property: port
+          property: hostport
 
     autoDeploy: false
 
