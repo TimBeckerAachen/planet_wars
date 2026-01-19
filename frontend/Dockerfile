@@ -21,14 +21,18 @@ FROM nginx:alpine
 # Remove default nginx configuration
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy custom nginx configuration as template
+COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 
 # Copy build artifacts from the builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Copy and make entrypoint script executable
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Expose port 80
 EXPOSE 80
 
-# Start Nginx with environment variable substitution
-CMD ["/bin/sh", "-c", "echo 'Environment variables:' && echo \"PORT=$PORT\" && echo \"BACKEND_HOST=$BACKEND_HOST\" && echo \"BACKEND_PORT=$BACKEND_PORT\" && export RESOLVER=$(awk 'BEGIN{ORS=\" \"} /^nameserver/{print $2}' /etc/resolv.conf | head -n1) && echo \"RESOLVER=$RESOLVER\" && sed -e \"s/\${PORT}/$PORT/g\" -e \"s/\${BACKEND_HOST}/$BACKEND_HOST/g\" -e \"s/\${BACKEND_PORT}/$BACKEND_PORT/g\" -e \"s/\${RESOLVER}/$RESOLVER/g\" /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf.tmp && mv /etc/nginx/conf.d/default.conf.tmp /etc/nginx/conf.d/default.conf && cat /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+# Use entrypoint script
+CMD ["/entrypoint.sh"]
