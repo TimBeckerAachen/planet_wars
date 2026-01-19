@@ -32,4 +32,5 @@ EXPOSE 80
 
 # Start Nginx
 # Start Nginx with environment variable substitution
-CMD ["/bin/sh", "-c", "envsubst '${PORT} ${BACKEND_URL}' < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf.tmp && mv /etc/nginx/conf.d/default.conf.tmp /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+# We extract the resolver IP from /etc/resolv.conf to ensure we use the correct DNS for the environment (Render/Kubernetes etc.)
+CMD ["/bin/sh", "-c", "export RESOLVER=$(awk 'BEGIN{ORS=\" \"} /^nameserver/{print $2}' /etc/resolv.conf | head -n1) && envsubst '${PORT} ${BACKEND_URL} ${RESOLVER}' < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf.tmp && mv /etc/nginx/conf.d/default.conf.tmp /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
