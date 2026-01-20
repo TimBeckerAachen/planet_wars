@@ -13,11 +13,13 @@ echo "  BACKEND_PORT=${BACKEND_PORT:-NOT_SET}" >&2
 : ${PORT:=10000}
 : ${BACKEND_HOST:=planetwars-backend.onrender.com}
 : ${BACKEND_PORT:=443}
+: ${BACKEND_SCHEME:=https}
 
 echo "After defaults:" >&2
 echo "  PORT=$PORT" >&2
 echo "  BACKEND_HOST=$BACKEND_HOST" >&2
 echo "  BACKEND_PORT=$BACKEND_PORT" >&2
+echo "  BACKEND_SCHEME=$BACKEND_SCHEME" >&2
 
 # Extract DNS resolver
 export RESOLVER=$(awk 'BEGIN{ORS=" "} /^nameserver/{print $2}' /etc/resolv.conf | head -n1)
@@ -27,6 +29,7 @@ echo "  RESOLVER=$RESOLVER" >&2
 sed -e "s/\${PORT}/$PORT/g" \
     -e "s/\${BACKEND_HOST}/$BACKEND_HOST/g" \
     -e "s/\${BACKEND_PORT}/$BACKEND_PORT/g" \
+    -e "s/\${BACKEND_SCHEME}/$BACKEND_SCHEME/g" \
     -e "s/\${RESOLVER}/$RESOLVER/g" \
     /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
 

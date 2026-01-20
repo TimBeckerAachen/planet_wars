@@ -34,9 +34,11 @@ services:
     envVars:
 
       - key: BACKEND_HOST
-        value: planetwars-backend
+        value: planetwars-backend.onrender.com
       - key: BACKEND_PORT
-        value: 8000
+        value: 443
+      - key: BACKEND_SCHEME
+        value: https
 
     autoDeploy: false
 
