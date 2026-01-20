@@ -43,7 +43,7 @@ jobs:
     - name: Run tests
       env:
         DATABASE_URL: postgresql://user:password@localhost:5432/dbname
-        PYTHONPATH: ${{ github.workspace }}
+        PYTHONPATH: .
       run: |
         cd backend && uv run pytest
 

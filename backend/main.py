@@ -2,9 +2,9 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import timedelta
-from . import models, schemas, auth
-from .database import engine, get_db
-from .config import settings
+import models, schemas, auth
+from database import engine, get_db
+from config import settings
 
 app = FastAPI(title="Planet Wars API")
 

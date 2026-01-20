@@ -1,7 +1,7 @@
 """Unit tests for Pydantic schemas"""
 import pytest
 from pydantic import ValidationError
-from backend.schemas import UserSignupRequest, UserLoginRequest
+from schemas import UserSignupRequest, UserLoginRequest
 
 
 class TestUserSignupRequest:

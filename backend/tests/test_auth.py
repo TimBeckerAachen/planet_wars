@@ -2,8 +2,8 @@
 import pytest
 from datetime import timedelta
 from jose import jwt, JWTError
-from backend import auth
-from backend.config import settings
+import auth
+from config import settings
 
 
 class TestPasswordHashing:
