@@ -21,6 +21,18 @@ echo "  BACKEND_HOST=$BACKEND_HOST" >&2
 echo "  BACKEND_PORT=$BACKEND_PORT" >&2
 echo "  BACKEND_SCHEME=$BACKEND_SCHEME" >&2
 
+# Failsafe: If BACKEND_HOST is strictly the internal service name (which fails on free tier),
+# force switch to the public URL. This handles cases where Render Blueprint env vars haven't synced yet.
+if [ "$BACKEND_HOST" = "planetwars-backend" ]; then
+    echo "!! DETECTED INTERNAL HOSTNAME ON FREE TIER - SWITCHING TO PUBLIC URL !!" >&2
+    export BACKEND_HOST="planetwars-backend.onrender.com"
+    export BACKEND_PORT="443"
+    export BACKEND_SCHEME="https"
+    echo "  New BACKEND_HOST=$BACKEND_HOST" >&2
+    echo "  New BACKEND_PORT=$BACKEND_PORT" >&2
+    echo "  New BACKEND_SCHEME=$BACKEND_SCHEME" >&2
+fi
+
 # Extract DNS resolver
 export RESOLVER=$(awk 'BEGIN{ORS=" "} /^nameserver/{print $2}' /etc/resolv.conf | head -n1)
 echo "  RESOLVER=$RESOLVER" >&2
