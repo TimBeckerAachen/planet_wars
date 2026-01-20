@@ -1,36 +1,79 @@
-import { useState, useEffect } from 'react'
+import { AuthProvider, useAuth } from './AuthContext';
+import AuthPage from './AuthPage';
 
-function App() {
-    const [data, setData] = useState<string>('')
-    const [loading, setLoading] = useState<boolean>(true)
+function MainApp() {
+    const { user, loading, logout } = useAuth();
 
-    useEffect(() => {
-        fetch('/api/')
-            .then(res => res.json())
-            .then(data => {
-                setData(data.message)
-                setLoading(false)
-            })
-            .catch(err => {
-                console.error('Error fetching data:', err)
-                setData('Error connecting to backend')
-                setLoading(false)
-            })
-    }, [])
+    if (loading) {
+        return (
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '100vh',
+                background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+                color: 'white'
+            }}>
+                <h2>Loading...</h2>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return <AuthPage />;
+    }
 
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
-            <h1>Full-Stack Application</h1>
-            <div style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-                <h2>Backend Status</h2>
-                {loading ? (
-                    <p>Loading...</p>
-                ) : (
-                    <p data-testid="backend-message">{data}</p>
-                )}
+        <div style={{
+            maxWidth: '800px',
+            margin: '0 auto',
+            padding: '2rem',
+            fontFamily: 'system-ui, sans-serif'
+        }}>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '2rem'
+            }}>
+                <h1>Welcome, {user.username}!</h1>
+                <button
+                    onClick={logout}
+                    style={{
+                        padding: '10px 20px',
+                        background: '#dc2626',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: '600'
+                    }}
+                >
+                    Logout
+                </button>
+            </div>
+            <div style={{
+                padding: '1rem',
+                border: '1px solid #ccc',
+                borderRadius: '8px',
+                background: '#f9fafb'
+            }}>
+                <h2>Planet Wars - Game Coming Soon</h2>
+                <p>You are successfully authenticated!</p>
+                <p><strong>User ID:</strong> {user.id}</p>
+                <p><strong>Email:</strong> {user.email}</p>
+                <p><strong>Joined:</strong> {new Date(user.created_at).toLocaleDateString()}</p>
             </div>
         </div>
-    )
+    );
 }
 
-export default App
+function App() {
+    return (
+        <AuthProvider>
+            <MainApp />
+        </AuthProvider>
+    );
+}
+
+export default App;

@@ -1,32 +1,22 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import App from './App'
 
-// Mock fetch
-global.fetch = vi.fn(() => Promise.resolve({ json: () => Promise.resolve({}) })) as any
-
-function createFetchResponse(data: any) {
-    return { json: () => new Promise((resolve) => resolve(data)) }
-}
+// Mock the API module
+vi.mock('./api', () => ({
+    getAuthToken: vi.fn(),
+    getCurrentUser: vi.fn(),
+    loginUser: vi.fn(),
+    signupUser: vi.fn(),
+    logout: vi.fn()
+}))
 
 describe('App', () => {
-    it('renders title', () => {
+    it('renders AuthPage when not authenticated', async () => {
         render(<App />)
-        expect(screen.getByText('Full-Stack Application')).toBeInTheDocument()
-    })
-
-    it('fetches and displays backend message', async () => {
-        // Setup mock
-        (fetch as any).mockResolvedValue(createFetchResponse({ message: 'Hello from FastAPI!' }))
-
-        render(<App />)
-
-        // Should show loading initially
-        expect(screen.getByText('Loading...')).toBeInTheDocument()
-
-        // Wait for the message to appear
-        await waitFor(() => {
-            expect(screen.getByTestId('backend-message')).toHaveTextContent('Hello from FastAPI!')
-        })
+        // Should find login form elements after loading
+        expect(await screen.findByPlaceholderText('Enter username or email')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument()
     })
 })
+

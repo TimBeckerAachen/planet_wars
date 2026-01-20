@@ -41,11 +41,11 @@ jobs:
         uv sync
 
     - name: Run tests
-      working-directory: ./backend
       env:
         DATABASE_URL: postgresql://user:password@localhost:5432/dbname
+        PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run python -m pytest
+        cd backend && uv run pytest
 
     - name: Build Backend Docker image
       run: docker build . -t planet-wars-backend
