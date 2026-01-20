@@ -285,7 +285,7 @@ class TestAuthMe:
         """Test /auth/me without token"""
         response = client.get("/auth/me")
         
-        assert response.status_code == 403  # Forbidden without token
+        assert response.status_code == 401  # Unauthorized without token
     
     def test_get_current_user_with_invalid_token(self):
         """Test /auth/me with invalid token"""

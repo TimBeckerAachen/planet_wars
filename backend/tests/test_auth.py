@@ -14,9 +14,8 @@ class TestPasswordHashing:
         password = "testpassword123"
         hashed = auth.hash_password(password)
         
-        # Bcrypt hashes start with $2b$
-        assert hashed.startswith("$2b$")
-        assert len(hashed) == 60  # Bcrypt hashes are always 60 characters
+        # Argon2 hashes start with $argon2
+        assert hashed.startswith("$argon2")
     
     def test_verify_password_correct(self):
         """Test password verification with correct password"""

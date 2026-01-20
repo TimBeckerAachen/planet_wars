@@ -10,7 +10,7 @@ from .database import get_db
 from . import models
 
 # Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 # HTTP Bearer token scheme
 security = HTTPBearer()
