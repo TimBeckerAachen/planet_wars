@@ -18,7 +18,8 @@ describe('OverviewPage', () => {
         buildings: [
             { id: 1, name: 'gold_mine', level: 1, is_constructing: false, finish_time: null }
         ],
-        units: []
+        units: [],
+        construction_options: []
     };
 
     beforeEach(() => {
@@ -39,7 +40,8 @@ describe('OverviewPage', () => {
         await waitFor(() => {
             expect(screen.getByText(/Planet: Colony/i)).toBeInTheDocument();
         });
-        expect(screen.getByText(/gold mine \(Lvl 1\)/i)).toBeInTheDocument();
+        expect(screen.getByText(/gold mine/i)).toBeInTheDocument();
+        expect(screen.getByText(/Lvl 1/i)).toBeInTheDocument();
         expect(screen.getByText(/Construction Hub/i)).toBeInTheDocument();
     });
 });
