@@ -39,4 +39,26 @@ def run_auto_migrations():
                 type_str = "DATETIME"
             conn.execute(text(f"ALTER TABLE users ADD COLUMN last_resource_update {type_str} DEFAULT CURRENT_TIMESTAMP"))
             
+            
+    # START: Migration for Buildings
+    if inspector.has_table("buildings"):
+        columns = [c["name"] for c in inspector.get_columns("buildings")]
+        print(f"Migrating: Check. Found columns in 'buildings': {columns}")
+        
+        with engine.begin() as conn:
+            # Add 'production_type'
+            if "production_type" not in columns:
+                print("Migrating: Adding 'production_type' column to buildings table...")
+                conn.execute(text("ALTER TABLE buildings ADD COLUMN production_type VARCHAR"))
+            
+            # Add 'production_finish_time'
+            if "production_finish_time" not in columns:
+                print("Migrating: Adding 'production_finish_time' column to buildings table...")
+                dialect = engine.dialect.name
+                if dialect == 'postgresql':
+                    type_str = "TIMESTAMP WITH TIME ZONE"
+                else:
+                    type_str = "DATETIME"
+                conn.execute(text(f"ALTER TABLE buildings ADD COLUMN production_finish_time {type_str}"))
+                
     print("Auto-migration check complete.")
