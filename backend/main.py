@@ -114,7 +114,10 @@ def get_game_state(
     # 1. Fetch Planet
     planet = db.query(models.Planet).filter(models.Planet.owner_id == current_user.id).first()
     if not planet:
-        raise HTTPException(status_code=404, detail="Planet not found")
+        # Legacy user or assignment failed previously. Try to assign now.
+        planet = game_logic.assign_planet(db, current_user.id)
+        if not planet:
+             raise HTTPException(status_code=503, detail="Planet grid is full")
 
     # 2. Fetch Buildings
     buildings = db.query(models.Building).filter(models.Building.planet_id == planet.id).all()
