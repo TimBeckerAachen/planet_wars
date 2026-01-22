@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { AuthProvider, useAuth } from './AuthContext';
 import AuthPage from './AuthPage';
+import GameLayout from './components/GameLayout';
+import OverviewPage from './pages/OverviewPage';
+import MapPage from './pages/MapPage';
 
 function MainApp() {
-    const { user, loading, logout } = useAuth();
+    const { user, loading } = useAuth();
+    const [currentPage, setCurrentPage] = useState<'overview' | 'map'>('overview');
 
     if (loading) {
         return (
@@ -24,47 +29,17 @@ function MainApp() {
     }
 
     return (
-        <div style={{
-            maxWidth: '800px',
-            margin: '0 auto',
-            padding: '2rem',
-            fontFamily: 'system-ui, sans-serif'
-        }}>
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '2rem'
-            }}>
-                <h1>Welcome, {user.username}!</h1>
-                <button
-                    onClick={logout}
-                    style={{
-                        padding: '10px 20px',
-                        background: '#dc2626',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontWeight: '600'
-                    }}
-                >
-                    Logout
-                </button>
-            </div>
-            <div style={{
-                padding: '1rem',
-                border: '1px solid #ccc',
-                borderRadius: '8px',
-                background: '#f9fafb'
-            }}>
-                <h2>Planet Wars - Game Coming Soon</h2>
-                <p>You are successfully authenticated!</p>
-                <p><strong>User ID:</strong> {user.id}</p>
-                <p><strong>Email:</strong> {user.email}</p>
-                <p><strong>Joined:</strong> {new Date(user.created_at).toLocaleDateString()}</p>
-            </div>
-        </div>
+        <GameLayout
+            user={user}
+            currentPage={currentPage}
+            onNavigate={setCurrentPage}
+        >
+            {currentPage === 'overview' ? (
+                <OverviewPage />
+            ) : (
+                <MapPage currentPlanetId={undefined} />
+            )}
+        </GameLayout>
     );
 }
 

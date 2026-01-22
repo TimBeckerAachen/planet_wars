@@ -1,13 +1,7 @@
 // API service for authentication
-const API_BASE_URL = '/api';
+import { User, GameState, MapState } from './types';
 
-export interface User {
-    id: number;
-    username: string;
-    email: string;
-    created_at: string;
-    updated_at: string;
-}
+const API_BASE_URL = '/api';
 
 export interface AuthResponse {
     access_token: string;
@@ -120,4 +114,27 @@ export async function getCurrentUser(): Promise<User> {
  */
 export function logout(): void {
     removeAuthToken();
+}
+
+/**
+ * Get current game state
+ */
+export async function getGameState(): Promise<GameState> {
+    return apiRequest<GameState>('/game/state');
+}
+
+/**
+ * Start construction of a building
+ */
+export async function buildBuilding(buildingName: string): Promise<{ status: string; finish_time: string }> {
+    return apiRequest<{ status: string; finish_time: string }>(`/game/build?building_name=${buildingName}`, {
+        method: 'POST'
+    });
+}
+
+/**
+ * Get map state
+ */
+export async function getMap(): Promise<MapState> {
+    return apiRequest<MapState>('/game/map');
 }

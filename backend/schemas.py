@@ -23,16 +23,60 @@ class UserLoginRequest(BaseModel):
     password: str = Field(..., description="User password")
 
 
+
 class UserResponse(BaseModel):
     """Schema for user data response (excludes password)"""
     id: int
     username: str
     email: str
+    gold: int = 100
     created_at: datetime
     updated_at: datetime
     
     class Config:
         from_attributes = True
+
+
+class PlanetResponse(BaseModel):
+    id: int
+    x: int
+    y: int
+    name: str
+    owner_id: int
+    
+    class Config:
+        from_attributes = True
+
+
+class BuildingResponse(BaseModel):
+    id: int
+    name: str
+    level: int
+    is_constructing: bool
+    finish_time: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class UnitResponse(BaseModel):
+    id: int
+    name: str
+    count: int
+    
+    class Config:
+        from_attributes = True
+
+
+class GameStateResponse(BaseModel):
+    user: UserResponse
+    planet: PlanetResponse
+    buildings: list[BuildingResponse]
+    units: list[UnitResponse]
+
+
+class MapStateResponse(BaseModel):
+    planets: list[PlanetResponse]
 
 
 class AuthResponse(BaseModel):
@@ -51,3 +95,4 @@ class TokenData(BaseModel):
 class AuthErrorResponse(BaseModel):
     """Schema for authentication error responses"""
     detail: str
+

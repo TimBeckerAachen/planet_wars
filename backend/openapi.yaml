@@ -11,6 +11,8 @@ servers:
 tags:
   - name: auth
     description: Authentication endpoints
+  - name: game
+    description: Game logic endpoints
   - name: health
     description: Health check endpoints
 
@@ -79,6 +81,10 @@ components:
           format: email
           description: Email address
           example: player@example.com
+        gold:
+          type: integer
+          description: Current gold resources
+          example: 100
         created_at:
           type: string
           format: date-time
@@ -87,6 +93,7 @@ components:
           type: string
           format: date-time
           description: Last update timestamp
+
 
     AuthResponse:
       type: object
@@ -109,6 +116,80 @@ components:
           type: string
           description: Error message
           example: Invalid credentials
+
+    PlanetResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        x:
+          type: integer
+        y:
+          type: integer
+        name:
+          type: string
+        owner_id:
+          type: integer
+
+    BuildingResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        level:
+          type: integer
+        is_constructing:
+          type: boolean
+        finish_time:
+          type: string
+          format: date-time
+          nullable: true
+
+    UnitResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        count:
+          type: integer
+
+    GameStateResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        planet:
+          $ref: '#/components/schemas/PlanetResponse'
+        buildings:
+          type: array
+          items:
+            $ref: '#/components/schemas/BuildingResponse'
+        units:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnitResponse'
+
+    MapStateResponse:
+      type: object
+      properties:
+        planets:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanetResponse'
+
+    ConstructionResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        finish_time:
+          type: string
+          format: date-time
+
 
 paths:
   /health:
@@ -245,3 +326,61 @@ paths:
                 $ref: '#/components/schemas/Error'
               example:
                 detail: User not found
+
+  /game/state:
+    get:
+      tags:
+        - game
+      summary: Get game state
+      description: Retrieve current game state including resources, buildings, and units
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current game state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameStateResponse'
+  
+  /game/build:
+    post:
+      tags:
+        - game
+      summary: Construct building
+      description: Start construction or upgrade of a building
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: building_name
+          schema:
+            type: string
+          required: true
+          description: Name of the building (gold_mine, space_ship_factory, university)
+      responses:
+        '200':
+          description: Construction started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstructionResponse'
+        '400':
+          description: Invalid building or insufficient resources
+  
+  /game/map:
+    get:
+      tags:
+        - game
+      summary: Get map
+      description: Retrieve the galaxy map
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Map state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapStateResponse'
+
