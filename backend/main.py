@@ -94,7 +94,7 @@ def signup(user_data: schemas.UserSignupRequest, db: Session = Depends(get_db)):
     return schemas.AuthResponse(
         access_token=access_token,
         token_type="bearer",
-        user=schemas.UserResponse.from_orm(new_user)
+        user=schemas.UserResponse.model_validate(new_user)
     )
 
 # ... login ...
@@ -140,10 +140,10 @@ def get_game_state(
         buildings = db.query(models.Building).filter(models.Building.planet_id == planet.id).all()
 
     return schemas.GameStateResponse(
-        user=schemas.UserResponse.from_orm(current_user),
-        planet=schemas.PlanetResponse.from_orm(planet),
-        buildings=[schemas.BuildingResponse.from_orm(b) for b in buildings],
-        units=[schemas.UnitResponse.from_orm(u) for u in units]
+        user=schemas.UserResponse.model_validate(current_user),
+        planet=schemas.PlanetResponse.model_validate(planet),
+        buildings=[schemas.BuildingResponse.model_validate(b) for b in buildings],
+        units=[schemas.UnitResponse.model_validate(u) for u in units]
     )
 
 
@@ -241,7 +241,7 @@ def get_map(
     db: Session = Depends(get_db)
 ):
     planets = db.query(models.Planet).all()
-    return schemas.MapStateResponse(planets=[schemas.PlanetResponse.from_orm(p) for p in planets])
+    return schemas.MapStateResponse(planets=[schemas.PlanetResponse.model_validate(p) for p in planets])
 
 
 
@@ -282,7 +282,7 @@ def login(credentials: schemas.UserLoginRequest, db: Session = Depends(get_db)):
     return schemas.AuthResponse(
         access_token=access_token,
         token_type="bearer",
-        user=schemas.UserResponse.from_orm(user)
+        user=schemas.UserResponse.model_validate(user)
     )
 
 
@@ -293,4 +293,4 @@ def get_current_user_info(current_user: models.User = Depends(auth.get_current_u
     
     Requires valid JWT token in Authorization header
     """
-    return schemas.UserResponse.from_orm(current_user)
+    return schemas.UserResponse.model_validate(current_user)
