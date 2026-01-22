@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 import models
 from sqlalchemy import or_
@@ -65,11 +65,16 @@ def calculate_resources(user: models.User, buildings: list[models.Building], db:
     """
     Update user's gold based on time elapsed and gold mines.
     """
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     if not user.last_resource_update:
         user.last_resource_update = now
         db.commit()
         return
+
+    # Handle naive datetime from SQLite/Tests
+    last_update = user.last_resource_update
+    if last_update.tzinfo is None:
+        last_update = last_update.replace(tzinfo=timezone.utc)
 
     # Find gold mines
     # Assuming rate depends on level. Prompt: "gold mine which produces 10 gold per hour"
@@ -79,7 +84,7 @@ def calculate_resources(user: models.User, buildings: list[models.Building], db:
         if b.name == "gold_mine" and not b.is_constructing:
             gold_production_rate += 10 * b.level
     
-    time_diff = now - user.last_resource_update
+    time_diff = now - last_update
     hours_passed = time_diff.total_seconds() / 3600.0
     
     # If using integer gold, we accumulate float but store int? 
