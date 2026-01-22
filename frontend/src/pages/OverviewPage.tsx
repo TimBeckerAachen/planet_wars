@@ -6,23 +6,43 @@ export default function OverviewPage() {
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const [errorCount, setErrorCount] = useState(0);
+
     const fetchState = async () => {
         try {
             const data = await getGameState();
             setGameState(data);
-        } catch (error) {
+            setErrorCount(0); // Reset on success
+        } catch (error: any) {
             console.error(error);
+            setErrorCount(prev => prev + 1);
+            // Stop polling on Auth failure or Too Many Requests
+            if (error.message.includes('401') || error.message.includes('429')) {
+                return false; // Signal to stop
+            }
         } finally {
             setLoading(false);
         }
+        return true;
     };
 
     useEffect(() => {
+        let interval: ReturnType<typeof setInterval>;
+
         fetchState();
-        // Poll every 10 seconds for resources/construction
-        const interval = setInterval(fetchState, 10000);
+
+        // Poll every 10 seconds, but stop if too many errors
+        interval = setInterval(async () => {
+            if (errorCount > 3) {
+                clearInterval(interval);
+                return;
+            }
+            const shouldContinue = await fetchState();
+            if (!shouldContinue) clearInterval(interval);
+        }, 10000);
+
         return () => clearInterval(interval);
-    }, []);
+    }, [errorCount]);
 
     const handleBuild = async (name: string) => {
         try {
