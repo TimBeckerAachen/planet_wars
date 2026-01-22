@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 import models, schemas, auth, game_logic
 from database import engine, get_db
 import auto_migrate
@@ -130,7 +130,7 @@ def get_game_state(
     db.refresh(current_user) # get updated gold
     
     # 5. Check Construction status (TODO: move to game_logic if complex)
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     dirty = False
     for b in buildings:
         if b.is_constructing and b.finish_time and b.finish_time <= now:
@@ -214,7 +214,7 @@ def build_building(
     # Deduct Gold
     current_user.gold -= COST
     
-    finish_time = datetime.now() + timedelta(hours=TIME_HOURS)
+    finish_time = datetime.now(timezone.utc) + timedelta(hours=TIME_HOURS)
     
     if target_building:
         # Limit one construction at a time per building?

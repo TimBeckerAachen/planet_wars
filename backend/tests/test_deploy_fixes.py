@@ -88,3 +88,41 @@ def test_lazy_planet_creation():
     # Should also have a gold mine created
     assert len(data["buildings"]) > 0
     assert data["buildings"][0]["name"] == "gold_mine"
+
+def test_timezone_conflict():
+    """
+    Verify that calculate_resources handles offset-aware datetimes from DB
+    without crashing when subtracting mixed naive/aware types.
+    """
+    db = TestingSessionLocal()
+    from datetime import datetime, timezone, timedelta
+    
+    # Create user with valid timezone-aware last_resource_update
+    # Simulating what Postgres returns (offset-aware)
+    aware_time = datetime.now(timezone.utc) - timedelta(hours=1)
+    
+    user = models.User(
+        username="tz_test",
+        email="tz@test.com",
+        hashed_password="hash",
+        gold=100,
+        last_resource_update=aware_time
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    # Create buildings
+    b = models.Building(planet_id=1, name="gold_mine", level=1) # dummy planet_id
+    
+    # Call calculate_resources
+    # If code uses datetime.now() (naive), this will raise TypeError
+    # If code uses datetime.now(timezone.utc) (aware), this will work
+    import game_logic
+    try:
+        game_logic.calculate_resources(user, [b], db)
+        assert True
+    except TypeError as e:
+        pytest.fail(f"Timezone conflict error: {e}")
+    finally:
+        db.close()
