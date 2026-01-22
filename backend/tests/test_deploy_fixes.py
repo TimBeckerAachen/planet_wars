@@ -1,49 +1,18 @@
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
-from database import Base, get_db
+
+from sqlalchemy import text
+from database import Base
 from main import app
 import models
 import auth
 import auto_migrate
 import pytest
+from conftest import engine, TestingSessionLocal
 
-# In-memory DB
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, 
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# No local engine creation needed, import shared engine/sessionLocal if needed for simulation
+# But better to just use db_session fixture
 
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-client = TestClient(app)
-
-@pytest.fixture(scope="module", autouse=True)
-def setup_db():
-    original = app.dependency_overrides.get(get_db)
-    app.dependency_overrides[get_db] = override_get_db
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
-    if original:
-        app.dependency_overrides[get_db] = original
-    elif get_db in app.dependency_overrides:
-        del app.dependency_overrides[get_db]
-
-def test_auto_migrate_idempotency():
+def test_auto_migrate_idempotency(db_session):
     """Test that auto-migrate runs without error on existing schema."""
-    # Since we use sqlite, the generic text(...) we used should validly run or skip
-    # Our script uses engine.dialect check for type.
-    # We just want to ensure it doesn't crash.
     # Monkeypatch the engine in auto_migrate to use our test engine
     original_engine = auto_migrate.engine
     auto_migrate.engine = engine
@@ -55,10 +24,8 @@ def test_auto_migrate_idempotency():
     finally:
         auto_migrate.engine = original_engine
 
-def test_lazy_planet_creation():
+def test_lazy_planet_creation(client, db_session):
     """Test that a user without a planet gets one assigned when accessing /game/state."""
-    db = TestingSessionLocal()
-    
     # Manually create a user WITHOUT a planet (simulation of legacy user)
     legacy_user = models.User(
         username="legacy",
@@ -66,11 +33,10 @@ def test_lazy_planet_creation():
         hashed_password=auth.hash_password("password123"),
         gold=100
     )
-    db.add(legacy_user)
-    db.commit()
-    db.refresh(legacy_user)
+    db_session.add(legacy_user)
+    db_session.commit()
+    db_session.refresh(legacy_user)
     user_id = legacy_user.id
-    db.close()
     
     # Generate token
     token = auth.create_access_token(data={"user_id": user_id, "username": "legacy"})
@@ -89,12 +55,11 @@ def test_lazy_planet_creation():
     assert len(data["buildings"]) > 0
     assert data["buildings"][0]["name"] == "gold_mine"
 
-def test_timezone_conflict():
+def test_timezone_conflict(db_session):
     """
     Verify that calculate_resources handles offset-aware datetimes from DB
     without crashing when subtracting mixed naive/aware types.
     """
-    db = TestingSessionLocal()
     from datetime import datetime, timezone, timedelta
     
     # Create user with valid timezone-aware last_resource_update
@@ -108,21 +73,17 @@ def test_timezone_conflict():
         gold=100,
         last_resource_update=aware_time
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
     
     # Create buildings
     b = models.Building(planet_id=1, name="gold_mine", level=1) # dummy planet_id
     
     # Call calculate_resources
-    # If code uses datetime.now() (naive), this will raise TypeError
-    # If code uses datetime.now(timezone.utc) (aware), this will work
     import game_logic
     try:
-        game_logic.calculate_resources(user, [b], db)
+        game_logic.calculate_resources(user, [b], db_session)
         assert True
     except TypeError as e:
         pytest.fail(f"Timezone conflict error: {e}")
-    finally:
-        db.close()

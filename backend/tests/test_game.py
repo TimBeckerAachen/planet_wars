@@ -1,58 +1,8 @@
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
-from database import Base, get_db
-from main import app
-import models
+
 import pytest
-import os
+# No localized engine imports needed, fixtures provided by conftest.py
 
-# Use in-memory SQLite for comprehensive isolation
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, 
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool # Important for in-memory to persist across threads if needed
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-# Initialize client with app
-client = TestClient(app)
-
-@pytest.fixture(scope="module", autouse=True)
-def setup_db():
-    # Save existing overrides to restore later if needed (good citizenship)
-    original_override = app.dependency_overrides.get(get_db)
-    
-    # Set our override
-    app.dependency_overrides[get_db] = override_get_db
-    
-    # Create tables
-    Base.metadata.create_all(bind=engine)
-    
-    yield
-    
-    # Teardown
-    Base.metadata.drop_all(bind=engine)
-    
-    # Restore original override or clear if none existed
-    if original_override:
-        app.dependency_overrides[get_db] = original_override
-    elif get_db in app.dependency_overrides:
-        del app.dependency_overrides[get_db]
-
-
-
-def test_signup_creates_planet():
+def test_signup_creates_planet(client):
     response = client.post(
         "/auth/signup",
         json={"username": "player1", "email": "p1@test.com", "password": "password123"}
@@ -75,7 +25,7 @@ def test_signup_creates_planet():
     assert len(state["buildings"]) >= 1
     assert state["buildings"][0]["name"] == "gold_mine"
     
-def test_build_construction():
+def test_build_construction(client):
     # Helper to get auth token
     response = client.post(
         "/auth/signup",
@@ -98,7 +48,7 @@ def test_build_construction():
     assert factory is not None
     assert factory["is_constructing"] == True
 
-def test_insufficient_gold_dynamic():
+def test_insufficient_gold_dynamic(client):
     # User has 100 Gold initially. University costs 150.
     response = client.post(
         "/auth/signup",
@@ -111,19 +61,20 @@ def test_insufficient_gold_dynamic():
     assert response.status_code == 400
     assert "Not enough gold" in response.json()["detail"]
 
-def test_map_view():
+def test_map_view(client):
     # Create another user
     client.post(
         "/auth/signup",
         json={"username": "mapper", "email": "map@test.com", "password": "password123"}
     ).json()
     
-    # Get token for first user (already created in setup effectively or reused)
-    # Actually setup is module scoped, so previous users exist.
-    # Just login as player1
+    # Get token for first user (if test order matters, we should create our own user here)
+    # Since fixtures reset DB per function (scope="function"), "player1" DOES NOT EXIST from previous tests.
+    # We must create a user for this test.
+    
     response = client.post(
-        "/auth/login",
-        json={"identifier": "player1", "password": "password123"}
+        "/auth/signup",
+        json={"username": "player1", "email": "player1@test.com", "password": "password123"}
     )
     token = response.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -131,4 +82,6 @@ def test_map_view():
     response = client.get("/game/map", headers=headers)
     assert response.status_code == 200
     data = response.json()
-    assert len(data["planets"]) >= 2 # player1, builder, mapper
+    # Should see at least 2 planets: mapper and player1
+    assert len(data["planets"]) >= 2
+    
