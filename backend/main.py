@@ -2,8 +2,9 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import timedelta, datetime
-import models, schemas, auth
+import models, schemas, auth, game_logic
 from database import engine, get_db
+import auto_migrate
 from config import settings
 
 app = FastAPI(title="Planet Wars API")
@@ -20,8 +21,10 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_event():
-    """Create database tables on startup"""
+    """Create database tables on startup and run migrations"""
     models.Base.metadata.create_all(bind=engine)
+    # Run auto-migrations for schema updates
+    auto_migrate.run_auto_migrations()
 
 
 @app.get("/health")
