@@ -133,11 +133,17 @@ def get_game_state(
     now = datetime.now(timezone.utc)
     dirty = False
     for b in buildings:
-        if b.is_constructing and b.finish_time and b.finish_time <= now:
-            b.is_constructing = 0
-            b.finish_time = None
-            dirty = True
-            # Log completion or similar?
+        if b.is_constructing and b.finish_time:
+            # Handle naive datetime from SQLite/Tests
+            finish_time = b.finish_time
+            if finish_time.tzinfo is None:
+                finish_time = finish_time.replace(tzinfo=timezone.utc)
+                
+            if finish_time <= now:
+                b.is_constructing = 0
+                b.finish_time = None
+                dirty = True
+                # Log completion or similar?
             
     if dirty:
         db.commit()
