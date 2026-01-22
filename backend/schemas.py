@@ -68,11 +68,21 @@ class UnitResponse(BaseModel):
         from_attributes = True
 
 
+
+class ConstructionOption(BaseModel):
+    name: str
+    type: str # 'build' or 'upgrade'
+    cost: int
+    duration: int # seconds
+    production: int # optional, if relevant
+    level: int
+
 class GameStateResponse(BaseModel):
     user: UserResponse
     planet: PlanetResponse
     buildings: list[BuildingResponse]
     units: list[UnitResponse]
+    construction_options: list[ConstructionOption] = []
 
 
 class MapStateResponse(BaseModel):

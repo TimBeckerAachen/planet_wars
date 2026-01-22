@@ -29,11 +29,21 @@ export interface Unit {
     count: number;
 }
 
+export interface ConstructionOption {
+    name: string;
+    type: 'build' | 'upgrade';
+    cost: number;
+    duration: number; // seconds
+    production: number;
+    level: number;
+}
+
 export interface GameState {
     user: User;
     planet: Planet;
     buildings: Building[];
     units: Unit[];
+    construction_options: ConstructionOption[];
 }
 
 export interface MapState {

@@ -142,6 +142,7 @@ def get_game_state(
             if finish_time <= now:
                 b.is_constructing = 0
                 b.finish_time = None
+                b.level += 1 # Upgrade finished!
                 dirty = True
                 # Log completion or similar?
             
@@ -151,11 +152,42 @@ def get_game_state(
         db.refresh(planet) # may not be enough for list
         buildings = db.query(models.Building).filter(models.Building.planet_id == planet.id).all()
 
+    # 6. Generate Construction Options
+    construction_options = []
+    TYPES = ["gold_mine", "space_ship_factory", "university"]
+    
+    for t in TYPES:
+        # Find existing building
+        existing = next((b for b in buildings if b.name == t), None)
+        
+        if existing:
+            # Upgrade Option (Level + 1)
+            # If already constructing, maybe shown as disabled or "in progress" in UI?
+            # API just returns stats for next level
+            next_level = existing.level + 1
+            type_str = "upgrade"
+        else:
+            # Build Option (Level 1)
+            next_level = 1
+            type_str = "build"
+            
+        stats = game_logic.get_building_stats(t, next_level)
+        if stats:
+            construction_options.append(schemas.ConstructionOption(
+                name=t,
+                type=type_str,
+                cost=stats["cost"],
+                duration=stats["duration"], # seconds
+                production=stats.get("production", 0),
+                level=next_level
+            ))
+
     return schemas.GameStateResponse(
         user=schemas.UserResponse.model_validate(current_user),
         planet=schemas.PlanetResponse.model_validate(planet),
         buildings=[schemas.BuildingResponse.model_validate(b) for b in buildings],
-        units=[schemas.UnitResponse.model_validate(u) for u in units]
+        units=[schemas.UnitResponse.model_validate(u) for u in units],
+        construction_options=construction_options
     )
 
 
@@ -169,75 +201,67 @@ def build_building(
     Start construction of a building.
     Costs 50 gold, takes 2 hours.
     """
-    COST = 50
-    TIME_HOURS = 2
+
     
     # Check gold (update first to be sure)
     planet = db.query(models.Planet).filter(models.Planet.owner_id == current_user.id).first()
     buildings = db.query(models.Building).filter(models.Building.planet_id == planet.id).all()
     game_logic.calculate_resources(current_user, buildings, db)
     db.refresh(current_user)
-    
-    if current_user.gold < COST:
-         raise HTTPException(status_code=400, detail="Not enough gold")
-         
-    # Check valid building name
-    if building_name not in ["space_ship_factory", "university", "gold_mine"]: # upgrading gold mine?
-         raise HTTPException(status_code=400, detail="Invalid building type")
 
-    # If upgrading existing (Gold Mine or others?), find it.
-    # Prompt: "When they are finished they will be present in the list of buildings." 
-    # Implies new instance for factory/university? 
-    # "You can also upgrade the gold mine... which costs gold and time again."
-    
-    # Logic:
-    # If gold_mine -> Upgrade existing
-    # If factory/university -> Build new ONE if not exists? Or multiple?
-    # "can build like space ship factory... present in list" implies list can grow.
-    # But usually these are unique per planet. Let's assume unique for now for simplicity, or allow duplicates?
-    # "if you click on the university..." implies ONE university.
-    
     target_building = None
+    target_level = 1
+    
+    # 1. Determine Target Level & Building
     if building_name == "gold_mine":
-        # Find existing
         target_building = next((b for b in buildings if b.name == "gold_mine"), None)
         if not target_building:
              raise HTTPException(status_code=404, detail="Gold mine not found")
+        target_level = target_building.level + 1
     else:
-        # Check if already exists? "present in the list... click on the university" 
-        # usually implies existence.
-        # But "selection of building that the user can build... When finished present in list"
-        # means they are NOT in the list initially.
-        # So we create a NEW one.
-        # Let's prevent duplicates for simplicity unless requested.
         existing = next((b for b in buildings if b.name == building_name), None)
-        if existing and not existing.is_constructing:
-             # Already built? Maybe allow multiple? Or say "Already built". 
-             # Prompt doesn't forbid multiple, but standard game logic implies unique usually.
-             # Let's allow simple creation.
-             pass
+        if existing:
+             if existing.is_constructing:
+                  raise HTTPException(status_code=400, detail="Building is already constructing")
+             target_building = existing
+             target_level = existing.level + 1
+        else:
+             target_level = 1
+             
+    # 2. Get Stats for Target Level
+    stats = game_logic.get_building_stats(building_name, target_level)
+    if not stats:
+         raise HTTPException(status_code=400, detail="Invalid building configuration")
+         
+    COST = stats["cost"]
+    DURATION_SECONDS = stats["duration"] # seconds
     
-    # Deduct Gold
+    # 3. Check Gold
+    if current_user.gold < COST:
+         raise HTTPException(status_code=400, detail=f"Not enough gold. Need {COST}, have {current_user.gold}")
+         
+    # 4. Deduct Gold and Set Timers
     current_user.gold -= COST
-    
-    finish_time = datetime.now(timezone.utc) + timedelta(hours=TIME_HOURS)
+    finish_time = datetime.now(timezone.utc) + timedelta(seconds=DURATION_SECONDS)
     
     if target_building:
-        # Limit one construction at a time per building?
-        if target_building.is_constructing:
-             raise HTTPException(status_code=400, detail="Building is already upgrading")
         target_building.is_constructing = 1
         target_building.finish_time = finish_time
-        target_building.level += 1 # Pre-increment level or wait? Usually wait. 
-        # But for simpler logic, I'll Increment level ONLY when finished.
-        # So here just set flag.
-        target_building.level -= 0 # No change yet
+        # We increase level AFTER construction in main logic loop (get_game_state), not here?
+        # Actually in get_game_state we did: b.is_constructing=0, finish_time=None. 
+        # But we forgot incrementing level!
+        # The prompt says "with higher level the cost... increases".
+        # So we MUST increment level upon completion.
+        # FIX: The completion logic in `get_game_state` must increment level.
+        # Here we just mark start.
+        # Re-using existing instance does not change level yet.
     else:
         # Create new
+        # Initialize at Level 0 so that completion logic (level += 1) results in Level 1.
         new_b = models.Building(
             planet_id=planet.id,
             name=building_name,
-            level=1,
+            level=0, 
             is_constructing=1,
             finish_time=finish_time
         )

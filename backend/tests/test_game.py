@@ -90,12 +90,26 @@ def test_build_construction():
     assert response.json()["status"] == "Construction started"
     
     # Verify gold deduction and building presence
+    # Factory Cost is 100 (Base), User had 100. Left: 0.
     response = client.get("/game/state", headers=headers)
     state = response.json()
-    assert state["user"]["gold"] == 50 # 100 - 50
+    assert state["user"]["gold"] == 0 
     factory = next((b for b in state["buildings"] if b["name"] == "space_ship_factory"), None)
     assert factory is not None
     assert factory["is_constructing"] == True
+
+def test_insufficient_gold_dynamic():
+    # User has 100 Gold initially. University costs 150.
+    response = client.post(
+        "/auth/signup",
+        json={"username": "broke_student", "email": "broke@test.com", "password": "password123"}
+    )
+    token = response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    response = client.post("/game/build?building_name=university", headers=headers)
+    assert response.status_code == 400
+    assert "Not enough gold" in response.json()["detail"]
 
 def test_map_view():
     # Create another user

@@ -53,20 +53,95 @@ export default function OverviewPage() {
         }
     };
 
+    // State for real-time gold ticker
+    const [displayGold, setDisplayGold] = useState(0);
+
+    // State for timers
+    const [timers, setTimers] = useState<Record<number, string>>({});
+
+    // Update display gold when authoritative gold changes
+    useEffect(() => {
+        if (gameState) {
+            setDisplayGold(gameState.user.gold);
+        }
+    }, [gameState?.user.gold]);
+
+    // Gold Ticker Effect
+    useEffect(() => {
+        if (!gameState) return;
+
+        // Calculate production rate (Gold Mines)
+        const productionRatePerHour = gameState.buildings
+            .filter(b => b.name === 'gold_mine' && !b.is_constructing)
+            .reduce((sum, b) => sum + (10 * b.level), 0);
+
+        const productionPerSecond = productionRatePerHour / 3600;
+
+        if (productionPerSecond === 0) return;
+
+        const interval = setInterval(() => {
+            setDisplayGold(prev => prev + productionPerSecond);
+        }, 1000); // Update every second
+
+        return () => clearInterval(interval);
+    }, [gameState]);
+
+    // Construction Countdown Effect
+    useEffect(() => {
+        if (!gameState) return;
+
+        const updateTimers = () => {
+            const now = new Date().getTime();
+            const newTimers: Record<number, string> = {};
+
+            gameState.buildings.forEach(b => {
+                if (b.is_constructing && b.finish_time) {
+                    const finish = new Date(b.finish_time).getTime(); // finish_time is UTC string
+                    const diff = finish - now;
+
+                    if (diff > 0) {
+                        const mins = Math.floor(diff / 60000);
+                        const secs = Math.floor((diff % 60000) / 1000);
+                        newTimers[b.id] = `${mins}m ${secs}s`;
+                    } else {
+                        newTimers[b.id] = "Finishing...";
+                    }
+                }
+            });
+            setTimers(newTimers);
+        };
+
+        updateTimers(); // Initial call
+        const interval = setInterval(updateTimers, 1000);
+        return () => clearInterval(interval);
+    }, [gameState]);
+
+
+    // Helper to format gold
+    const formatGold = (amount: number) => Math.floor(amount).toLocaleString();
+
     if (loading || !gameState) return <div>Loading command center...</div>;
 
-    const { planet, buildings, units } = gameState;
-
-    // Helper to find building
-    const getBuilding = (name: string) => buildings.find(b => b.name === name);
+    const { planet, buildings, units, construction_options } = gameState;
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
             {/* Left Column: Planet Info & Lists */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                <div className="planet-info">
-                    <h2>Planet: {planet.name}</h2>
-                    <p>Coordinates: {planet.x}, {planet.y}</p>
+                <div className="planet-info" style={{
+                    background: 'rgba(0,0,0,0.3)', padding: '1.5rem', borderRadius: '12px',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                }}>
+                    <div>
+                        <h2>Planet: {planet.name}</h2>
+                        <p>Coordinates: {planet.x}, {planet.y}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '2rem', color: '#ffd700', fontWeight: 'bold' }}>
+                            {formatGold(displayGold)} 💰
+                        </div>
+                        <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Gold (Updating real-time)</div>
+                    </div>
                 </div>
 
                 <div className="section">
@@ -77,15 +152,22 @@ export default function OverviewPage() {
                                 padding: '1rem',
                                 background: 'rgba(255,255,255,0.05)',
                                 borderRadius: '8px',
-                                border: b.is_constructing ? '1px solid orange' : '1px solid rgba(255,255,255,0.1)'
-                            }}>
-                                <div style={{ fontWeight: 'bold', textTransform: 'capitalize' }}>
-                                    {b.name.replace(/_/g, ' ')} (Lvl {b.level})
+                                border: b.is_constructing ? '1px solid orange' : '1px solid rgba(255,255,255,0.1)',
+                                position: 'relative'
+                            }} title={b.name === 'gold_mine' ? `Produces ${10 * b.level} Gold/Hr` : 'Production Facility'}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ fontWeight: 'bold', textTransform: 'capitalize' }}>
+                                        {b.name.replace(/_/g, ' ')} <span style={{ fontSize: '0.8em', opacity: 0.7 }}>(Lvl {b.level})</span>
+                                    </div>
+                                    {b.is_constructing && timers[b.id] && (
+                                        <div style={{ color: 'orange', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                                            ⏱ {timers[b.id]}
+                                        </div>
+                                    )}
                                 </div>
                                 {b.is_constructing && (
-                                    <div style={{ color: 'orange', fontSize: '0.9rem' }}>
+                                    <div style={{ color: 'orange', fontSize: '0.8rem', marginTop: '0.5rem' }}>
                                         🚧 Under Construction...
-                                        {/* Timer could go here */}
                                     </div>
                                 )}
                             </div>
@@ -116,37 +198,71 @@ export default function OverviewPage() {
             }}>
                 <h3>Construction Hub</h3>
                 <p style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: '1rem' }}>
-                    Build new facilities. Cost: 50 Gold. Time: 2h.
+                    Upgrade mechanics enabled.
                 </p>
 
                 <div style={{ display: 'grid', gap: '1rem' }}>
-                    {['space_ship_factory', 'university', 'gold_mine'].map(type => {
-                        const existing = getBuilding(type);
-                        const isUpgrading = existing?.is_constructing;
-                        const label = type === 'gold_mine' ? 'Upgrade Gold Mine' : `Build ${type.replace(/_/g, ' ')}`;
+                    {construction_options.map(opt => {
+                        const isAffordable = Math.floor(displayGold) >= opt.cost;
+                        // Find current building status to check if busy
+                        const current = buildings.find(b => b.name === opt.name);
+                        const isBusy = current?.is_constructing;
 
                         return (
-                            <button
-                                key={type}
-                                onClick={() => handleBuild(type)}
-                                disabled={isUpgrading}
-                                style={{
-                                    padding: '1rem',
-                                    background: isUpgrading ? '#444' : '#2563eb',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    cursor: isUpgrading ? 'not-allowed' : 'pointer',
-                                    textAlign: 'left',
-                                    fontWeight: 'bold',
-                                    textTransform: 'capitalize'
-                                }}
-                            >
-                                {label}
-                                {isUpgrading && <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'normal' }}>Busy...</span>}
-                            </button>
+                            <div key={opt.name} style={{
+                                background: 'rgba(255,255,255,0.03)',
+                                borderRadius: '8px',
+                                overflow: 'hidden'
+                            }}>
+                                <div style={{ padding: '1rem 1rem 0.5rem 1rem' }}>
+                                    <div style={{ fontWeight: 'bold', textTransform: 'capitalize', marginBottom: '0.2rem' }}>
+                                        {opt.type === 'build' ? 'Build' : 'Upgrade'} {opt.name.replace(/_/g, ' ')}
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>
+                                        To Level {opt.level}
+                                    </div>
+
+                                    <div style={{
+                                        display: 'flex', justifyContent: 'space-between', marginTop: '0.8rem',
+                                        fontSize: '0.9rem', fontFamily: 'monospace'
+                                    }}>
+                                        <span style={{ color: isAffordable ? '#ffd700' : '#ff4444' }}>
+                                            {opt.cost} 💰
+                                        </span>
+                                        <span>
+                                            {(opt.duration / 60).toFixed(0)}m ⏳
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => handleBuild(opt.name)}
+                                    disabled={!isAffordable || isBusy}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.8rem',
+                                        background: isBusy ? '#444' : (!isAffordable ? '#555' : '#2563eb'),
+                                        color: (!isAffordable && !isBusy) ? '#aaa' : 'white',
+                                        border: 'none',
+                                        marginTop: '0.5rem',
+                                        cursor: (!isAffordable || isBusy) ? 'not-allowed' : 'pointer',
+                                        fontWeight: 'bold',
+                                        textTransform: 'uppercase',
+                                        fontSize: '0.8rem',
+                                        letterSpacing: '1px'
+                                    }}
+                                >
+                                    {isBusy ? 'In Progress' : (isAffordable ? (opt.type === 'build' ? 'Construct' : 'Upgrade') : 'Need Gold')}
+                                </button>
+                            </div>
                         );
                     })}
+
+                    {construction_options.length === 0 && (
+                        <div style={{ padding: '1rem', textAlign: 'center', opacity: 0.5 }}>
+                            Loading options...
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

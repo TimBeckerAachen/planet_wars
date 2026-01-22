@@ -61,6 +61,36 @@ def assign_planet(db: Session, user_id: int):
             
     return None # Grid is likely full
 
+
+# Base Stats
+BUILDING_STATS = {
+    "gold_mine": {"base_cost": 50, "base_time": 3600, "base_production": 10}, # 1 hour
+    "space_ship_factory": {"base_cost": 100, "base_time": 7200, "base_production": 0}, # 2 hours
+    "university": {"base_cost": 150, "base_time": 10800, "base_production": 0}, # 3 hours
+}
+
+def get_building_stats(name: str, level: int):
+    """
+    Calculate cost and build time for a specific building level.
+    Cost scales exponentially: Base * (1.5 ^ (level - 1))
+    Time scales linearly: Base * level
+    """
+    stats = BUILDING_STATS.get(name)
+    if not stats:
+        return None
+    
+    # Cost formula: Base * 1.5^(L-1)
+    cost = int(stats["base_cost"] * (1.5 ** (level - 1)))
+    
+    # Time formula: Base * L
+    duration = stats["base_time"] * level
+    
+    return {
+        "cost": cost,
+        "duration": duration,
+        "production": stats["base_production"] * level if stats["base_production"] else 0
+    }
+
 def calculate_resources(user: models.User, buildings: list[models.Building], db: Session):
     """
     Update user's gold based on time elapsed and gold mines.
@@ -77,25 +107,16 @@ def calculate_resources(user: models.User, buildings: list[models.Building], db:
         last_update = last_update.replace(tzinfo=timezone.utc)
 
     # Find gold mines
-    # Assuming rate depends on level. Prompt: "gold mine which produces 10 gold per hour"
-    # Is it 10 * level? Or 10 flat? Let's assume 10 * level for progression.
     gold_production_rate = 0
     for b in buildings:
         if b.name == "gold_mine" and not b.is_constructing:
-            gold_production_rate += 10 * b.level
+            # Use shared stats for production rate
+            stats = get_building_stats("gold_mine", b.level)
+            if stats:
+                gold_production_rate += stats["production"]
     
     time_diff = now - last_update
     hours_passed = time_diff.total_seconds() / 3600.0
-    
-    # If using integer gold, we accumulate float but store int? 
-    # Or just floor it. For simplicity, just add floor(hours * rate).
-    # NOTE: This simple approach loses fractional gold if called frequently.
-    # Better: keep last_resource_update only when we actually add gold?
-    # Or store gold as Float? DB says Integer.
-    # Let's only update if at least 1 gold is produced to avoid fractional loss on frequent polls,
-    # OR we can just accept the loss for this simple MVP.
-    # Alternative: use a float for calculation but only display int.
-    # Let's try to be precise:
     
     gold_produced = int(hours_passed * gold_production_rate)
     
