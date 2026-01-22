@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BuildingDetails, ProductionOption } from '../types';
+import { BuildingDetails } from '../types';
 import { getBuildingDetails, buildBuilding, produceUnit } from '../api';
 import { useGame } from '../GameContext';
 

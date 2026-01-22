@@ -11,7 +11,7 @@ interface GameLayoutProps {
 
 import { useGame } from '../GameContext';
 
-export default function GameLayout({ user, children, onNavigate, currentPage }: GameLayoutProps) {
+export default function GameLayout({ children, onNavigate, currentPage }: GameLayoutProps) {
     const [showSettings, setShowSettings] = useState(false);
     const { displayGold } = useGame();
 
