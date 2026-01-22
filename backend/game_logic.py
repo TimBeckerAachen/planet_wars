@@ -91,6 +91,67 @@ def get_building_stats(name: str, level: int):
         "production": stats["base_production"] * level if stats["base_production"] else 0
     }
 
+# Unit Stats
+UNIT_STATS = {
+    "pilot": {"cost": {"gold": 50}, "base_time": 600}, # 10 minutes
+    "space_ship": {"cost": {"gold": 100, "pilot": 1}, "base_time": 1200}, # 20 minutes
+}
+
+def get_unit_stats(name: str, building_level: int = 1):
+    """
+    Calculate cost and recruit time for a unit.
+    Time scales inversely with building level: Base / Level.
+    """
+    stats = UNIT_STATS.get(name)
+    if not stats:
+        return None
+    
+    # Speed up with level
+    # Formula: Base / Level
+    duration = int(stats["base_time"] / building_level)
+    
+    return {
+        "cost": stats["cost"],
+        "duration": duration,
+        "base_time": stats["base_time"]
+    }
+
+def process_production(planet: models.Planet, buildings: list[models.Building], db: Session):
+    """
+    Check if any buildings have finished producing units.
+    """
+    now = datetime.now(timezone.utc)
+    dirty = False
+    
+    for b in buildings:
+        if b.production_type and b.production_finish_time:
+            finish_time = b.production_finish_time
+            if finish_time.tzinfo is None:
+                finish_time = finish_time.replace(tzinfo=timezone.utc)
+                
+            if finish_time <= now:
+                # Production finished
+                unit_type = b.production_type
+                b.production_type = None
+                b.production_finish_time = None
+                
+                # Add to units
+                unit = db.query(models.Unit).filter(
+                    models.Unit.planet_id == planet.id,
+                    models.Unit.name == unit_type
+                ).first()
+                
+                if not unit:
+                     unit = models.Unit(planet_id=planet.id, name=unit_type, count=0)
+                     db.add(unit)
+                     # Need to flush to get ID if needed, but not needed here
+                
+                unit.count += 1
+                dirty = True
+                
+    if dirty:
+        db.commit()
+
 def calculate_resources(user: models.User, buildings: list[models.Building], db: Session):
     """
     Update user's gold based on time elapsed and gold mines.

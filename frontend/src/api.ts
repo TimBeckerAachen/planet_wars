@@ -138,3 +138,20 @@ export async function buildBuilding(buildingName: string): Promise<{ status: str
 export async function getMap(): Promise<MapState> {
     return apiRequest<MapState>('/game/map');
 }
+
+/**
+ * Get building details including production options
+ */
+export async function getBuildingDetails(id: number): Promise<import('./types').BuildingDetails> {
+    return apiRequest<import('./types').BuildingDetails>(`/game/building/${id}`);
+}
+
+/**
+ * Start unit production
+ */
+export async function produceUnit(buildingId: number, unitName: string): Promise<{ status: string; finish_time: string }> {
+    return apiRequest(`/game/produce?building_id=${buildingId}&unit_name=${unitName}`, {
+        method: 'POST'
+    });
+}
+

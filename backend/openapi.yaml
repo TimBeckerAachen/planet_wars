@@ -1,386 +1,576 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Planet Wars API
-  description: Authentication API for Planet Wars browser game
-  version: 1.0.0
-
-servers:
-  - url: /api
-    description: Production API
-
-tags:
-  - name: auth
-    description: Authentication endpoints
-  - name: game
-    description: Game logic endpoints
-  - name: health
-    description: Health check endpoints
-
-components:
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: JWT authentication token
-
-  schemas:
-    UserSignupRequest:
-      type: object
-      required:
-        - username
-        - email
-        - password
-      properties:
-        username:
-          type: string
-          minLength: 3
-          maxLength: 50
-          description: Unique username (alphanumeric, underscores, hyphens allowed)
-          example: player123
-        email:
-          type: string
-          format: email
-          description: Valid email address
-          example: player@example.com
-        password:
-          type: string
-          minLength: 8
-          maxLength: 100
-          description: Password (minimum 8 characters)
-          example: securepass123
-
-    UserLoginRequest:
-      type: object
-      required:
-        - identifier
-        - password
-      properties:
-        identifier:
-          type: string
-          description: Username or email address
-          example: player123
-        password:
-          type: string
-          description: User password
-          example: securepass123
-
-    User:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: User ID
-          example: 1
-        username:
-          type: string
-          description: Username
-          example: player123
-        email:
-          type: string
-          format: email
-          description: Email address
-          example: player@example.com
-        gold:
-          type: integer
-          description: Current gold resources
-          example: 100
-        created_at:
-          type: string
-          format: date-time
-          description: Account creation timestamp
-        updated_at:
-          type: string
-          format: date-time
-          description: Last update timestamp
-
-
-    AuthResponse:
-      type: object
-      properties:
-        access_token:
-          type: string
-          description: JWT access token
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        token_type:
-          type: string
-          description: Token type
-          example: bearer
-        user:
-          $ref: '#/components/schemas/User'
-
-    Error:
-      type: object
-      properties:
-        detail:
-          type: string
-          description: Error message
-          example: Invalid credentials
-
-    PlanetResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        x:
-          type: integer
-        y:
-          type: integer
-        name:
-          type: string
-        owner_id:
-          type: integer
-
-    BuildingResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        level:
-          type: integer
-        is_constructing:
-          type: boolean
-        finish_time:
-          type: string
-          format: date-time
-          nullable: true
-
-    UnitResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        count:
-          type: integer
-
-    GameStateResponse:
-      type: object
-      properties:
-        user:
-          $ref: '#/components/schemas/User'
-        planet:
-          $ref: '#/components/schemas/PlanetResponse'
-        buildings:
-          type: array
-          items:
-            $ref: '#/components/schemas/BuildingResponse'
-        units:
-          type: array
-          items:
-            $ref: '#/components/schemas/UnitResponse'
-
-    MapStateResponse:
-      type: object
-      properties:
-        planets:
-          type: array
-          items:
-            $ref: '#/components/schemas/PlanetResponse'
-
-    ConstructionResponse:
-      type: object
-      properties:
-        status:
-          type: string
-        finish_time:
-          type: string
-          format: date-time
-
-
+  version: 0.1.0
 paths:
   /health:
     get:
-      tags:
-        - health
-      summary: Health check
-      description: Check if the API is running
+      summary: Health Check
+      operationId: health_check_health_get
       responses:
         '200':
-          description: API is healthy
+          description: Successful Response
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: healthy
-
+              schema: {}
   /:
     get:
-      tags:
-        - health
-      summary: Root endpoint
-      description: Returns API welcome message
+      summary: Read Root
+      operationId: read_root__get
       responses:
         '200':
-          description: Welcome message
+          description: Successful Response
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Hello from Planet Wars API!
-
+              schema: {}
   /auth/signup:
     post:
-      tags:
-        - auth
-      summary: Register a new user
-      description: Create a new user account and return JWT token
+      summary: Signup
+      description: Register a new user and assign a planet.
+      operationId: signup_auth_signup_post
       requestBody:
-        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/UserSignupRequest'
+        required: true
       responses:
         '201':
-          description: User successfully registered
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
-        '400':
-          description: Username or email already registered
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                duplicate_username:
-                  value:
-                    detail: Username already registered
-                duplicate_email:
-                  value:
-                    detail: Email already registered
         '422':
-          description: Validation error
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-
-  /auth/login:
-    post:
-      tags:
-        - auth
-      summary: Log in a user
-      description: Authenticate user and return JWT token
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserLoginRequest'
-      responses:
-        '200':
-          description: Successfully authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                detail: Invalid credentials
-
-  /auth/me:
-    get:
-      tags:
-        - auth
-      summary: Get current user
-      description: Retrieve current authenticated user information
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Current user information
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-        '401':
-          description: Invalid or expired token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                detail: Could not validate credentials
-        '404':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                detail: User not found
-
+                $ref: '#/components/schemas/HTTPValidationError'
   /game/state:
     get:
-      tags:
-        - game
-      summary: Get game state
-      description: Retrieve current game state including resources, buildings, and units
-      security:
-        - BearerAuth: []
+      summary: Get Game State
+      description: 'Get current game state: user resources, planet, buildings, units.
+
+        Triggers resource update.'
+      operationId: get_game_state_game_state_get
       responses:
         '200':
-          description: Current game state
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameStateResponse'
-  
+      security:
+      - HTTPBearer: []
   /game/build:
     post:
-      tags:
-        - game
-      summary: Construct building
-      description: Start construction or upgrade of a building
+      summary: Build Building
+      description: 'Start construction of a building.
+
+        Costs 50 gold, takes 2 hours.'
+      operationId: build_building_game_build_post
       security:
-        - BearerAuth: []
+      - HTTPBearer: []
       parameters:
-        - in: query
-          name: building_name
-          schema:
-            type: string
-          required: true
-          description: Name of the building (gold_mine, space_ship_factory, university)
+      - name: building_name
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Building Name
       responses:
         '200':
-          description: Construction started
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConstructionResponse'
-        '400':
-          description: Invalid building or insufficient resources
-  
+                $ref: '#/components/schemas/HTTPValidationError'
   /game/map:
     get:
-      tags:
-        - game
-      summary: Get map
-      description: Retrieve the galaxy map
-      security:
-        - BearerAuth: []
+      summary: Get Map
+      operationId: get_map_game_map_get
       responses:
         '200':
-          description: Map state
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MapStateResponse'
+      security:
+      - HTTPBearer: []
+  /auth/login:
+    post:
+      summary: Login
+      description: 'Authenticate a user and return JWT token
 
+
+        - **identifier**: Username or email
+
+        - **password**: User password
+
+
+        Returns JWT access token and user data'
+      operationId: login_auth_login_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/me:
+    get:
+      summary: Get Current User Info
+      description: 'Get current authenticated user information
+
+
+        Requires valid JWT token in Authorization header'
+      operationId: get_current_user_info_auth_me_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+      security:
+      - HTTPBearer: []
+  /game/building/{building_id}:
+    get:
+      summary: Get Building Details
+      operationId: get_building_details_game_building__building_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: building_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Building Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuildingDetailsResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /game/produce:
+    post:
+      summary: Produce Unit
+      operationId: produce_unit_game_produce_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: building_id
+        in: query
+        required: true
+        schema:
+          type: integer
+          title: Building Id
+      - name: unit_name
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Unit Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    AuthResponse:
+      properties:
+        access_token:
+          type: string
+          title: Access Token
+        token_type:
+          type: string
+          title: Token Type
+          default: bearer
+        user:
+          $ref: '#/components/schemas/UserResponse'
+      type: object
+      required:
+      - access_token
+      - user
+      title: AuthResponse
+      description: Schema for authentication response with JWT token
+    BuildingDetailsResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        level:
+          type: integer
+          title: Level
+        is_constructing:
+          type: boolean
+          title: Is Constructing
+        finish_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Finish Time
+        production_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Production Type
+        production_finish_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Production Finish Time
+        upgrade_cost:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Upgrade Cost
+        upgrade_duration:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Upgrade Duration
+        production_options:
+          items:
+            $ref: '#/components/schemas/ProductionOption'
+          type: array
+          title: Production Options
+          default: []
+        current_production_speed_bonus:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Current Production Speed Bonus
+        next_level_production_speed_bonus:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Next Level Production Speed Bonus
+      type: object
+      required:
+      - id
+      - name
+      - level
+      - is_constructing
+      title: BuildingDetailsResponse
+      description: Deep details for single building view
+    BuildingResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        level:
+          type: integer
+          title: Level
+        is_constructing:
+          type: boolean
+          title: Is Constructing
+        finish_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Finish Time
+        production_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Production Type
+        production_finish_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Production Finish Time
+      type: object
+      required:
+      - id
+      - name
+      - level
+      - is_constructing
+      title: BuildingResponse
+    ConstructionOption:
+      properties:
+        name:
+          type: string
+          title: Name
+        type:
+          type: string
+          title: Type
+        cost:
+          type: integer
+          title: Cost
+        duration:
+          type: integer
+          title: Duration
+        production:
+          type: integer
+          title: Production
+        level:
+          type: integer
+          title: Level
+      type: object
+      required:
+      - name
+      - type
+      - cost
+      - duration
+      - production
+      - level
+      title: ConstructionOption
+    GameStateResponse:
+      properties:
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        planet:
+          $ref: '#/components/schemas/PlanetResponse'
+        buildings:
+          items:
+            $ref: '#/components/schemas/BuildingResponse'
+          type: array
+          title: Buildings
+        units:
+          items:
+            $ref: '#/components/schemas/UnitResponse'
+          type: array
+          title: Units
+        construction_options:
+          items:
+            $ref: '#/components/schemas/ConstructionOption'
+          type: array
+          title: Construction Options
+          default: []
+      type: object
+      required:
+      - user
+      - planet
+      - buildings
+      - units
+      title: GameStateResponse
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    MapStateResponse:
+      properties:
+        planets:
+          items:
+            $ref: '#/components/schemas/PlanetResponse'
+          type: array
+          title: Planets
+      type: object
+      required:
+      - planets
+      title: MapStateResponse
+    PlanetResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        x:
+          type: integer
+          title: X
+        y:
+          type: integer
+          title: Y
+        name:
+          type: string
+          title: Name
+        owner_id:
+          type: integer
+          title: Owner Id
+      type: object
+      required:
+      - id
+      - x
+      - y
+      - name
+      - owner_id
+      title: PlanetResponse
+    ProductionOption:
+      properties:
+        name:
+          type: string
+          title: Name
+        cost:
+          additionalProperties:
+            type: integer
+          type: object
+          title: Cost
+        duration:
+          type: integer
+          title: Duration
+        base_time:
+          type: integer
+          title: Base Time
+      type: object
+      required:
+      - name
+      - cost
+      - duration
+      - base_time
+      title: ProductionOption
+    UnitResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        count:
+          type: integer
+          title: Count
+      type: object
+      required:
+      - id
+      - name
+      - count
+      title: UnitResponse
+    UserLoginRequest:
+      properties:
+        identifier:
+          type: string
+          title: Identifier
+          description: Username or email
+        password:
+          type: string
+          title: Password
+          description: User password
+      type: object
+      required:
+      - identifier
+      - password
+      title: UserLoginRequest
+      description: Schema for user login request
+    UserResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        username:
+          type: string
+          title: Username
+        email:
+          type: string
+          title: Email
+        gold:
+          type: integer
+          title: Gold
+          default: 100
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - id
+      - username
+      - email
+      - created_at
+      - updated_at
+      title: UserResponse
+      description: Schema for user data response (excludes password)
+    UserSignupRequest:
+      properties:
+        username:
+          type: string
+          maxLength: 50
+          minLength: 3
+          title: Username
+          description: Unique username
+        email:
+          type: string
+          format: email
+          title: Email
+          description: Valid email address
+        password:
+          type: string
+          maxLength: 100
+          minLength: 8
+          title: Password
+          description: Password (min 8 characters)
+      type: object
+      required:
+      - username
+      - email
+      - password
+      title: UserSignupRequest
+      description: Schema for user registration request
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      scheme: bearer

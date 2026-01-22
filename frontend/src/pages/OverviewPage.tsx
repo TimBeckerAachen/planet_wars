@@ -1,90 +1,16 @@
 import { useEffect, useState } from 'react';
-import { GameState } from '../types';
-import { getGameState, buildBuilding } from '../api';
+import { buildBuilding } from '../api';
+import { useGame } from '../GameContext';
 
-export default function OverviewPage() {
-    const [gameState, setGameState] = useState<GameState | null>(null);
-    const [loading, setLoading] = useState(true);
+interface OverviewPageProps {
+    onBuildingClick: (id: number) => void;
+}
 
-    const [errorCount, setErrorCount] = useState(0);
+export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
+    const { gameState, loading, refreshState } = useGame();
 
-    const fetchState = async () => {
-        try {
-            const data = await getGameState();
-            setGameState(data);
-            setErrorCount(0); // Reset on success
-        } catch (error: any) {
-            console.error(error);
-            setErrorCount(prev => prev + 1);
-            // Stop polling on Auth failure or Too Many Requests
-            if (error.message.includes('401') || error.message.includes('429')) {
-                return false; // Signal to stop
-            }
-        } finally {
-            setLoading(false);
-        }
-        return true;
-    };
-
-    useEffect(() => {
-        let interval: ReturnType<typeof setInterval>;
-
-        fetchState();
-
-        // Poll every 10 seconds, but stop if too many errors
-        interval = setInterval(async () => {
-            if (errorCount > 3) {
-                clearInterval(interval);
-                return;
-            }
-            const shouldContinue = await fetchState();
-            if (!shouldContinue) clearInterval(interval);
-        }, 10000);
-
-        return () => clearInterval(interval);
-    }, [errorCount]);
-
-    const handleBuild = async (name: string) => {
-        try {
-            await buildBuilding(name);
-            fetchState(); // Refresh immediately
-        } catch (err) {
-            alert('Failed to build: ' + (err as Error).message);
-        }
-    };
-
-    // State for real-time gold ticker
-    const [displayGold, setDisplayGold] = useState(0);
-
-    // State for timers
+    // State for construction timers (visual only)
     const [timers, setTimers] = useState<Record<number, string>>({});
-
-    // Update display gold when authoritative gold changes
-    useEffect(() => {
-        if (gameState) {
-            setDisplayGold(gameState.user.gold);
-        }
-    }, [gameState?.user.gold]);
-
-    // Gold Ticker Effect
-    useEffect(() => {
-        if (!gameState) return;
-
-        // Calculate production rate (Gold Mines)
-        const productionRatePerHour = gameState.buildings
-            .filter(b => b.name === 'gold_mine' && !b.is_constructing)
-            .reduce((sum, b) => sum + (10 * b.level), 0);
-
-        const productionPerSecond = productionRatePerHour / 3600;
-
-        if (productionPerSecond === 0) return;
-
-        const interval = setInterval(() => {
-            setDisplayGold(prev => prev + productionPerSecond);
-        }, 1000); // Update every second
-
-        return () => clearInterval(interval);
-    }, [gameState]);
 
     // Construction Countdown Effect
     useEffect(() => {
@@ -96,7 +22,7 @@ export default function OverviewPage() {
 
             gameState.buildings.forEach(b => {
                 if (b.is_constructing && b.finish_time) {
-                    const finish = new Date(b.finish_time).getTime(); // finish_time is UTC string
+                    const finish = new Date(b.finish_time).getTime();
                     const diff = finish - now;
 
                     if (diff > 0) {
@@ -116,9 +42,14 @@ export default function OverviewPage() {
         return () => clearInterval(interval);
     }, [gameState]);
 
-
-    // Helper to format gold
-    const formatGold = (amount: number) => Math.floor(amount).toLocaleString();
+    const handleBuild = async (name: string) => {
+        try {
+            await buildBuilding(name);
+            refreshState(); // Refresh via context
+        } catch (err) {
+            alert('Failed to build: ' + (err as Error).message);
+        }
+    };
 
     if (loading || !gameState) return <div>Loading command center...</div>;
 
@@ -136,25 +67,29 @@ export default function OverviewPage() {
                         <h2>Planet: {planet.name}</h2>
                         <p>Coordinates: {planet.x}, {planet.y}</p>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '2rem', color: '#ffd700', fontWeight: 'bold' }}>
-                            {formatGold(displayGold)} 💰
-                        </div>
-                        <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Gold (Updating real-time)</div>
-                    </div>
                 </div>
 
                 <div className="section">
                     <h3>Buildings</h3>
                     <div className="card-list" style={{ display: 'grid', gap: '1rem' }}>
                         {buildings.map(b => (
-                            <div key={b.id} style={{
-                                padding: '1rem',
-                                background: 'rgba(255,255,255,0.05)',
-                                borderRadius: '8px',
-                                border: b.is_constructing ? '1px solid orange' : '1px solid rgba(255,255,255,0.1)',
-                                position: 'relative'
-                            }} title={b.name === 'gold_mine' ? `Produces ${10 * b.level} Gold/Hr` : 'Production Facility'}>
+                            <div
+                                key={b.id}
+                                data-testid={`building-card-${b.id}`}
+                                onClick={() => onBuildingClick(b.id)}
+                                style={{
+                                    padding: '1rem',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    borderRadius: '8px',
+                                    border: b.is_constructing ? '1px solid orange' : '1px solid rgba(255,255,255,0.1)',
+                                    position: 'relative',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                title={b.name === 'gold_mine' ? `Produces ${10 * b.level} Gold/Hr` : 'Click for details'}
+                            >
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div style={{ fontWeight: 'bold', textTransform: 'capitalize' }}>
                                         {b.name.replace(/_/g, ' ')} <span style={{ fontSize: '0.8em', opacity: 0.7 }}>(Lvl {b.level})</span>
@@ -198,13 +133,12 @@ export default function OverviewPage() {
             }}>
                 <h3>Construction Hub</h3>
                 <p style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: '1rem' }}>
-                    Upgrade mechanics enabled.
+                    Quick Build / Upgrade
                 </p>
 
                 <div style={{ display: 'grid', gap: '1rem' }}>
                     {construction_options.map(opt => {
-                        const isAffordable = Math.floor(displayGold) >= opt.cost;
-                        // Find current building status to check if busy
+                        const isAffordable = (gameState.user.gold) >= opt.cost;
                         const current = buildings.find(b => b.name === opt.name);
                         const isBusy = current?.is_constructing;
 
@@ -257,12 +191,6 @@ export default function OverviewPage() {
                             </div>
                         );
                     })}
-
-                    {construction_options.length === 0 && (
-                        <div style={{ padding: '1rem', textAlign: 'center', opacity: 0.5 }}>
-                            Loading options...
-                        </div>
-                    )}
                 </div>
             </div>
         </div>

@@ -46,6 +46,10 @@ class Building(Base):
     # Construction status
     is_constructing = Column(Integer, default=0)  # 0: No, 1: Yes (Boolean stored as Int for SQLite compatibility if needed)
     finish_time = Column(DateTime(timezone=True), nullable=True)
+    
+    # Unit Production status
+    production_type = Column(String, nullable=True) # e.g. "pilot", "space_ship"
+    production_finish_time = Column(DateTime(timezone=True), nullable=True)
 
 
 class Unit(Base):

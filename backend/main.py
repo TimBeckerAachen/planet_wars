@@ -148,9 +148,14 @@ def get_game_state(
             
     if dirty:
         db.commit()
-        # Refresh buildings list to return clean state
-        db.refresh(planet) # may not be enough for list
-        buildings = db.query(models.Building).filter(models.Building.planet_id == planet.id).all()
+    
+    # 5a. Check Unit Production status
+    game_logic.process_production(planet, buildings, db)
+    # Refresh everything after updates
+    db.commit() # ensure all committed
+    db.refresh(planet)
+    buildings = db.query(models.Building).filter(models.Building.planet_id == planet.id).all()
+    units = db.query(models.Unit).filter(models.Unit.planet_id == planet.id).all()
 
     # 6. Generate Construction Options
     construction_options = []
@@ -330,3 +335,99 @@ def get_current_user_info(current_user: models.User = Depends(auth.get_current_u
     Requires valid JWT token in Authorization header
     """
     return schemas.UserResponse.model_validate(current_user)
+
+
+@app.get("/game/building/{building_id}", response_model=schemas.BuildingDetailsResponse)
+def get_building_details(
+    building_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    planet = db.query(models.Planet).filter(models.Planet.owner_id == current_user.id).first()
+    building = db.query(models.Building).filter(
+        models.Building.id == building_id, 
+        models.Building.planet_id == planet.id
+    ).first()
+    
+    if not building:
+        raise HTTPException(status_code=404, detail="Building not found")
+        
+    # Handle naive datetime
+    if building.finish_time and building.finish_time.tzinfo is None:
+        building.finish_time = building.finish_time.replace(tzinfo=timezone.utc)
+    if building.production_finish_time and building.production_finish_time.tzinfo is None:
+        building.production_finish_time = building.production_finish_time.replace(tzinfo=timezone.utc)
+
+    # Calculate Upgrade Stats
+    upgrade_stats = game_logic.get_building_stats(building.name, building.level + 1)
+    
+    response = schemas.BuildingDetailsResponse.model_validate(building)
+    if upgrade_stats:
+        response.upgrade_cost = upgrade_stats["cost"]
+        response.upgrade_duration = upgrade_stats["duration"]
+        
+    # Calculate Production Options
+    if building.name == "university":
+        stats = game_logic.get_unit_stats("pilot", building.level)
+        response.production_options = [
+            schemas.ProductionOption(name="pilot", cost=stats["cost"], duration=stats["duration"], base_time=stats["base_time"])
+        ]
+    elif building.name == "space_ship_factory":
+        stats = game_logic.get_unit_stats("space_ship", building.level)
+        response.production_options = [
+            schemas.ProductionOption(name="space_ship", cost=stats["cost"], duration=stats["duration"], base_time=stats["base_time"])
+        ]
+        
+    return response
+
+
+@app.post("/game/produce")
+def produce_unit(
+    building_id: int,
+    unit_name: str,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    planet = db.query(models.Planet).filter(models.Planet.owner_id == current_user.id).first()
+    building = db.query(models.Building).filter(
+        models.Building.id == building_id, 
+        models.Building.planet_id == planet.id
+    ).first()
+    
+    if not building:
+         raise HTTPException(status_code=404, detail="Building not found")
+         
+    if building.is_constructing:
+         raise HTTPException(status_code=400, detail="Building is upgrading, cannot produce")
+         
+    if building.production_type:
+         raise HTTPException(status_code=400, detail="Building is already producing")
+
+    # Get stats
+    stats = game_logic.get_unit_stats(unit_name, building.level)
+    if not stats:
+         raise HTTPException(status_code=400, detail="Invalid unit type")
+         
+    cost = stats["cost"]
+    
+    # Check Gold
+    if cost["gold"] > current_user.gold:
+         raise HTTPException(status_code=400, detail="Not enough gold")
+         
+    # Check Special Resources (Pilot)
+    if "pilot" in cost:
+         pilots = db.query(models.Unit).filter(models.Unit.planet_id == planet.id, models.Unit.name == "pilot").first()
+         if not pilots or pilots.count < cost["pilot"]:
+              raise HTTPException(status_code=400, detail="Not enough pilots")
+         # Deduct pilot
+         pilots.count -= cost["pilot"]
+         
+    # Deduct Gold
+    current_user.gold -= cost["gold"]
+    
+    # Start Production
+    building.production_type = unit_name
+    building.production_finish_time = datetime.now(timezone.utc) + timedelta(seconds=stats["duration"])
+    
+    db.commit()
+    return {"status": "Production started", "finish_time": building.production_finish_time}

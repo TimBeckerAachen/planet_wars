@@ -54,9 +54,26 @@ class BuildingResponse(BaseModel):
     level: int
     is_constructing: bool
     finish_time: Optional[datetime] = None
+    production_type: Optional[str] = None
+    production_finish_time: Optional[datetime] = None
     
     class Config:
         from_attributes = True
+
+
+class ProductionOption(BaseModel):
+    name: str # unit name
+    cost: dict[str, int] # e.g. {"gold": 100, "pilot": 1}
+    duration: int # seconds
+    base_time: int # for reference
+
+class BuildingDetailsResponse(BuildingResponse):
+    """Deep details for single building view"""
+    upgrade_cost: Optional[int] = None
+    upgrade_duration: Optional[int] = None
+    production_options: list[ProductionOption] = []
+    current_production_speed_bonus: Optional[float] = None
+    next_level_production_speed_bonus: Optional[float] = None
 
 
 class UnitResponse(BaseModel):

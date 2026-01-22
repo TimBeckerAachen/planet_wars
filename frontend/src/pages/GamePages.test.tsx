@@ -4,11 +4,21 @@ import OverviewPage from './OverviewPage';
 import MapPage from './MapPage';
 import * as api from '../api';
 
+// Mock the GameContext
+const mockRefreshState = vi.fn();
+const mockUseGame = vi.fn();
+
+vi.mock('../GameContext', () => ({
+    useGame: () => mockUseGame(),
+    GameProvider: ({ children }: any) => <div>{children}</div>
+}));
+
 // Mock the API module
 vi.mock('../api', () => ({
     getGameState: vi.fn(),
     buildBuilding: vi.fn(),
     getMap: vi.fn(),
+    getBuildingDetails: vi.fn(),
 }));
 
 describe('OverviewPage', () => {
@@ -27,21 +37,34 @@ describe('OverviewPage', () => {
     });
 
     it('renders loading state initially', () => {
-        // Return a promise that doesn't resolve immediately to test loading state
-        vi.mocked(api.getGameState).mockImplementation(() => new Promise(() => { }));
-        render(<OverviewPage />);
+        mockUseGame.mockReturnValue({
+            gameState: null,
+            loading: true,
+            refreshState: mockRefreshState
+        });
+
+        render(<OverviewPage onBuildingClick={vi.fn()} />);
         expect(screen.getByText(/Loading command center/i)).toBeInTheDocument();
     });
 
     it('renders game state after loading', async () => {
-        vi.mocked(api.getGameState).mockResolvedValue(mockGameState);
-        render(<OverviewPage />);
-
-        await waitFor(() => {
-            expect(screen.getByText(/Planet: Colony/i)).toBeInTheDocument();
+        mockUseGame.mockReturnValue({
+            gameState: mockGameState,
+            loading: false,
+            refreshState: mockRefreshState,
+            displayGold: 100
         });
-        expect(screen.getByText(/gold mine/i)).toBeInTheDocument();
-        expect(screen.getByText(/Lvl 1/i)).toBeInTheDocument();
+
+        render(<OverviewPage onBuildingClick={vi.fn()} />);
+
+        expect(screen.getByText(/Planet: Colony/i)).toBeInTheDocument();
+
+        // Use test ID to verify the card presence
+        const card = screen.getByTestId('building-card-1');
+        expect(card).toBeInTheDocument();
+        expect(card).toHaveTextContent(/gold mine/i);
+        expect(card).toHaveTextContent(/Lvl 1/i);
+
         expect(screen.getByText(/Construction Hub/i)).toBeInTheDocument();
     });
 });
@@ -64,7 +87,6 @@ describe('MapPage', () => {
         });
 
         // Check if planets are rendered (looking for titles or emoji)
-        // Since we used title attribute on divs:
         const planet1 = screen.getByTitle(/Planet: Colony \(5,5\)/i);
         expect(planet1).toBeInTheDocument();
         expect(planet1).toHaveTextContent('🌍');

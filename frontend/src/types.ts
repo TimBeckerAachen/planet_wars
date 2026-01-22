@@ -46,6 +46,24 @@ export interface GameState {
     construction_options: ConstructionOption[];
 }
 
+
+export interface ProductionOption {
+    name: string;
+    cost: Record<string, number>;
+    duration: number;
+    base_time: number;
+}
+
+export interface BuildingDetails extends Building {
+    upgrade_cost?: number;
+    upgrade_duration?: number;
+    production_options: ProductionOption[];
+    current_production_speed_bonus?: number;
+    next_level_production_speed_bonus?: number;
+    production_type?: string | null;
+    production_finish_time?: string | null;
+}
+
 export interface MapState {
     planets: Planet[];
 }

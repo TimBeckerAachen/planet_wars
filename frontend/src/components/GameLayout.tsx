@@ -9,8 +9,14 @@ interface GameLayoutProps {
     currentPage: 'overview' | 'map';
 }
 
+import { useGame } from '../GameContext';
+
 export default function GameLayout({ user, children, onNavigate, currentPage }: GameLayoutProps) {
     const [showSettings, setShowSettings] = useState(false);
+    const { displayGold } = useGame();
+
+    // Helper formats numbers with commas
+    const formatGold = (amount: number) => Math.floor(amount).toLocaleString();
 
     return (
         <div className="game-layout" style={{
@@ -40,7 +46,7 @@ export default function GameLayout({ user, children, onNavigate, currentPage }: 
                         borderRadius: '20px',
                         border: '1px solid gold'
                     }}>
-                        <span style={{ color: 'gold' }}>Gold: {user.gold}</span>
+                        <span style={{ color: 'gold' }}>Gold: {formatGold(displayGold)}</span>
                     </div>
 
                     {/* Navigation */}
