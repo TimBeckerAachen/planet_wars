@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "SonarSource.sonarlint-vscode",
+        "charliermarsh.ruff",
+        "ms-python.python"
+    ]
+}

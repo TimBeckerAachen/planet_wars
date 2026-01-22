@@ -1,0 +1,41 @@
+{
+    // Point to the uv virtual environment in the backend folder
+    "python.defaultInterpreterPath": "./backend/.venv/bin/python",
+    // Python Analysis: Include backend in paths so imports resolve
+    "python.analysis.extraPaths": [
+        "./backend"
+    ],
+    // Ruff Configuration
+    "ruff.configuration": "./backend/pyproject.toml",
+    // Format on save
+    "editor.formatOnSave": true,
+    // Language specific formatters
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    // Exclude cluttered folders from search and watchers (performance)
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/.venv": true,
+        "**/dist": true,
+        "**/__pycache__": true,
+        "**/.pytest_cache": true
+    },
+    "files.watcherExclude": {
+        "**/node_modules/**": true,
+        "**/.venv/**": true,
+        "**/__pycache__/**": true
+    }
+}

@@ -26,3 +26,80 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+addopts = "-ra -q --cov=."
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+# Target Python version (change to match your project).
+target-version = "py311"
+
+[tool.ruff.lint]
+# Enable specific rule sets to catch "Code Smells" and Security issues.
+# E/W = pycodestyle (standard linting)
+# F = Pyflakes (unused imports, variables)
+# B = Bugbear (catches common bugs and design problems)
+# I = Isort (sorts imports automatically)
+# N = PEP8 Naming conventions
+# UP = Pyupgrade (upgrades syntax to newer python versions)
+# S = Bandit (Security checks - CRITICAL for secure code)
+# PL = Pylint (Refactoring suggestions)
+# C90 = McCabe Complexity (Warns if functions are too complex)
+select = ["E", "W", "F", "B", "I", "N", "UP", "S", "PL", "C90"]
+
+# Ignore specific rules if they are too noisy (e.g., line too long).
+ignore = ["E501"]
+
+# Allow fix for all enabled rules (when `--fix` is used).
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+# Use double quotes for strings (Black style).
+quote-style = "double"
+# Indent with spaces, rather than tabs.
+indent-style = "space"
+# Respect magic trailing commas.
+skip-magic-trailing-comma = false
+# Automatically detect the appropriate line ending.
+line-ending = "auto"
+
+[tool.ruff.lint.mccabe]
+# Flag functions with high complexity (Spaghetti code prevention).
+max-complexity = 10
+
+[tool.ruff.lint.isort]
+# Ensure imports are grouped correctly.
+known-first-party = ["my_project_name"]
