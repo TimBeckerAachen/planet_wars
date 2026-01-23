@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { buildBuilding } from '../api';
+import { buildBuilding, renamePlanet } from '../api';
 import { useGame } from '../GameContext';
 
 interface OverviewPageProps {
@@ -11,6 +11,10 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
 
     // State for construction timers (visual only)
     const [timers, setTimers] = useState<Record<number, string>>({});
+    
+    // Rename State
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [planetNameInput, setPlanetNameInput] = useState('');
 
     // Construction Countdown Effect
     useEffect(() => {
@@ -51,6 +55,17 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
         }
     };
 
+    const handleRename = async () => {
+        if (!planetNameInput.trim()) return;
+        try {
+            await renamePlanet(planetNameInput);
+            setIsRenaming(false);
+            refreshState();
+        } catch (err) {
+            alert('Failed to rename: ' + (err as Error).message);
+        }
+    };
+
     if (loading || !gameState) return <div>Loading command center...</div>;
 
     const { planet, buildings, units, construction_options } = gameState;
@@ -64,7 +79,35 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                 }}>
                     <div>
-                        <h2>Planet: {planet.name}</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {isRenaming ? (
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <input 
+                                        type="text" 
+                                        value={planetNameInput} 
+                                        onChange={(e) => setPlanetNameInput(e.target.value)}
+                                        placeholder="New Name"
+                                        style={{ padding: '0.2rem', borderRadius: '4px', border: 'none', color: 'black' }}
+                                    />
+                                    <button onClick={handleRename} style={{ cursor: 'pointer', padding: '0.2rem 0.5rem', background: '#2563eb', color: 'white', border: 'none', borderRadius: '4px' }}>Save</button>
+                                    <button onClick={() => setIsRenaming(false)} style={{ cursor: 'pointer', padding: '0.2rem 0.5rem', background: '#666', color: 'white', border: 'none', borderRadius: '4px' }}>Cancel</button>
+                                </div>
+                            ) : (
+                                <>
+                                    <h2>Planet: {planet.name}</h2>
+                                    <button 
+                                        onClick={() => { setIsRenaming(true); setPlanetNameInput(planet.name); }}
+                                        style={{ 
+                                            background: 'none', border: 'none', cursor: 'pointer', opacity: 0.5, fontSize: '1rem' 
+                                        }}
+                                        title="Rename Planet"
+                                    >
+                                        ✏️
+                                    </button>
+                                </>
+                            )}
+                        </div>
+
                         <p>Coordinates: {planet.x}, {planet.y}</p>
                     </div>
                 </div>

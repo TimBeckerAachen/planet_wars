@@ -35,7 +35,7 @@ export default function MapPage({ currentPlanetId }: { currentPlanetId?: number 
                 {grid.map((row, y) => row.map((planet, x) => (
                     <div
                         key={`${x}-${y}`}
-                        title={planet ? `Planet: ${planet.name} (${x},${y})` : `Empty Space (${x},${y})`}
+                        title={planet ? `Planet: ${planet.name}\nOwner: ${planet.owner_username || 'Unknown'}\nCoords: (${x},${y})` : `Empty Space (${x},${y})`}
                         style={{
                             width: '40px',
                             height: '40px',

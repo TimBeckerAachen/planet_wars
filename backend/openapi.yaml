@@ -104,6 +104,32 @@ paths:
                 $ref: '#/components/schemas/MapStateResponse'
       security:
       - HTTPBearer: []
+  /game/planet/rename:
+    patch:
+      summary: Rename Planet
+      description: Rename the user's planet. Name must be unique.
+      operationId: rename_planet_game_planet_rename_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanetRenameRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanetResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
   /auth/login:
     post:
       summary: Login
@@ -410,6 +436,18 @@ components:
       required:
       - planets
       title: MapStateResponse
+    PlanetRenameRequest:
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          minLength: 3
+          title: Name
+          description: New planet name
+      type: object
+      required:
+      - name
+      title: PlanetRenameRequest
     PlanetResponse:
       properties:
         id:
@@ -427,6 +465,11 @@ components:
         owner_id:
           type: integer
           title: Owner Id
+        owner_username:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Owner Username
       type: object
       required:
       - id

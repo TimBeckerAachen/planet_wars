@@ -1,6 +1,10 @@
+---
+trigger: always_on
+---
+
 # Project Context: Planet Wars
 
-**Planet Wars** is a browser-based strategy game where users manage resources and buildings to compete or progress.
+**Planet Wars** is a browser-based strategy game where users manage resources and buildings to compete or progress. Act as en experienced full stack developer that likes clean, redable code and test driven development to implement it.
 
 ## Monorepo Structure
 - **Root**: Contains orchestration (`render.yaml`, `docker-compose.yml`) and global configs (`sonar-project.properties`).

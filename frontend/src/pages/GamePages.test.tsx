@@ -87,7 +87,7 @@ describe('MapPage', () => {
         });
 
         // Check if planets are rendered (looking for titles or emoji)
-        const planet1 = screen.getByTitle(/Planet: Colony \(5,5\)/i);
+        const planet1 = screen.getByTitle(/Planet: Colony/i);
         expect(planet1).toBeInTheDocument();
         expect(planet1).toHaveTextContent('🌍');
     });

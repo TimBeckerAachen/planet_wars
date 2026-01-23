@@ -155,3 +155,13 @@ export async function produceUnit(buildingId: number, unitName: string): Promise
     });
 }
 
+/**
+ * Rename planet
+ */
+export async function renamePlanet(name: string): Promise<import('./types').Planet> {
+    return apiRequest<import('./types').Planet>('/game/planet/rename', {
+        method: 'PATCH',
+        body: JSON.stringify({ name })
+    });
+}
+

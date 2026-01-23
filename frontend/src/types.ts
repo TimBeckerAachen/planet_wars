@@ -13,6 +13,7 @@ export interface Planet {
     y: number;
     name: string;
     owner_id: number;
+    owner_username?: string;
 }
 
 export interface Building {
