@@ -86,9 +86,24 @@ describe('MapPage', () => {
             expect(screen.queryByText(/Scanning sector/i)).not.toBeInTheDocument();
         });
 
-        // Check if planets are rendered (looking for titles or emoji)
-        const planet1 = screen.getByTitle(/Planet: Colony/i);
-        expect(planet1).toBeInTheDocument();
-        expect(planet1).toHaveTextContent('🌍');
+        // Hover over planet to trigger tooltip (simulated by finding the planet div first)
+        // Since we don't have titles anymore, we find by emoji or other attribute?
+        // We can find by text '🌍' which represents a planet
+        const planetEmoji = screen.getAllByText('🌍')[0];
+        
+        // Find the parent div of the emoji
+        const planetDiv = planetEmoji.closest('div');
+        if (!planetDiv) throw new Error('Planet div not found');
+        
+        // Simulate hover
+        // Note: We need to fire mouseEnter. Testing Library 'userEvent' is better but fireEvent works.
+        const { fireEvent } = require('@testing-library/react');
+        fireEvent.mouseEnter(planetDiv);
+        
+        // Check tooltip content
+        expect(screen.getByText('Colony')).toBeInTheDocument();
+        // Since owner isn't mocked in MapPage, it might be undefined/Unknown or implicit from ID?
+        // In mockMapState, owner_id is 1. owner_username might differ.
+        // Let's verify what we can.
     });
 });
