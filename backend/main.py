@@ -555,3 +555,276 @@ def produce_unit(
         "status": "Production started",
         "finish_time": building.production_finish_time,
     }
+
+
+# Fleet Mission Endpoints
+
+
+@app.post("/game/fleet/send", response_model=schemas.FleetMissionResponse)
+def send_fleet(
+    request: schemas.FleetSendRequest,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Send a fleet on a mission (attack or transport).
+
+    - **target_planet_id**: ID of the destination planet
+    - **mission_type**: 'attack' or 'transport'
+    - **ship_count**: Number of spaceships to send
+    - **gold_amount**: Amount of gold to transport (transport only, max 10 per ship)
+    """
+    # Get user's planet
+    planet = (
+        db.query(models.Planet)
+        .filter(models.Planet.owner_id == current_user.id)
+        .first()
+    )
+    if not planet:
+        raise HTTPException(status_code=404, detail="You don't have a planet")
+
+    # Get target planet
+    target_planet = (
+        db.query(models.Planet)
+        .filter(models.Planet.id == request.target_planet_id)
+        .first()
+    )
+    if not target_planet:
+        raise HTTPException(status_code=404, detail="Target planet not found")
+
+    if target_planet.id == planet.id:
+        raise HTTPException(
+            status_code=400, detail="Cannot send fleet to your own planet"
+        )
+
+    # Attack: must target another player's planet
+    if request.mission_type == "attack":
+        if target_planet.owner_id == current_user.id:
+            raise HTTPException(status_code=400, detail="Cannot attack your own planet")
+
+    # Check available ships
+    ships = (
+        db.query(models.Unit)
+        .filter(models.Unit.planet_id == planet.id, models.Unit.name == "space_ship")
+        .first()
+    )
+    available_ships = ships.count if ships else 0
+
+    if available_ships < request.ship_count:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Not enough spaceships. Have {available_ships}, need {request.ship_count}",
+        )
+
+    # For transport: validate gold amount
+    gold_carried = 0
+    if request.mission_type == "transport":
+        max_gold = request.ship_count * game_logic.SHIP_GOLD_CAPACITY
+        if request.gold_amount > max_gold:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Ships can carry max {max_gold} gold ({game_logic.SHIP_GOLD_CAPACITY} per ship)",
+            )
+        if request.gold_amount > current_user.gold:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Not enough gold. Have {current_user.gold}, want to send {request.gold_amount}",
+            )
+        gold_carried = request.gold_amount
+        current_user.gold -= gold_carried
+
+    # Deduct ships
+    ships.count -= request.ship_count
+
+    # Calculate travel time
+    travel_time = game_logic.calculate_travel_time(planet, target_planet)
+    arrival_time = datetime.now(timezone.utc) + timedelta(seconds=travel_time)
+
+    # Create mission
+    mission = models.FleetMission(
+        owner_id=current_user.id,
+        source_planet_id=planet.id,
+        target_planet_id=target_planet.id,
+        mission_type=request.mission_type,
+        ship_count=request.ship_count,
+        gold_carried=gold_carried,
+        arrival_time=arrival_time,
+        status="outbound",
+    )
+    db.add(mission)
+    db.commit()
+    db.refresh(mission)
+
+    return schemas.FleetMissionResponse(
+        id=mission.id,
+        source_planet_id=mission.source_planet_id,
+        target_planet_id=mission.target_planet_id,
+        source_planet_name=planet.name,
+        target_planet_name=target_planet.name,
+        mission_type=mission.mission_type,
+        ship_count=mission.ship_count,
+        gold_carried=mission.gold_carried,
+        departure_time=mission.departure_time,
+        arrival_time=mission.arrival_time,
+        return_time=mission.return_time,
+        status=mission.status,
+        owner_id=mission.owner_id,
+    )
+
+
+@app.get("/game/fleet/missions", response_model=schemas.FleetMissionsListResponse)
+def get_fleet_missions(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all active fleet missions for the current user.
+    Returns both outgoing (owned by user) and incoming (targeting user's planet).
+    """
+    # Process any completed missions first
+    game_logic.process_fleet_missions(db)
+
+    # Get user's planet
+    planet = (
+        db.query(models.Planet)
+        .filter(models.Planet.owner_id == current_user.id)
+        .first()
+    )
+
+    # Outgoing missions (owned by user, not completed)
+    outgoing = (
+        db.query(models.FleetMission)
+        .filter(
+            models.FleetMission.owner_id == current_user.id,
+            models.FleetMission.status != "completed",
+        )
+        .all()
+    )
+
+    outgoing_responses = []
+    for m in outgoing:
+        source_planet = (
+            db.query(models.Planet)
+            .filter(models.Planet.id == m.source_planet_id)
+            .first()
+        )
+        target_planet = (
+            db.query(models.Planet)
+            .filter(models.Planet.id == m.target_planet_id)
+            .first()
+        )
+        outgoing_responses.append(
+            schemas.FleetMissionResponse(
+                id=m.id,
+                source_planet_id=m.source_planet_id,
+                target_planet_id=m.target_planet_id,
+                source_planet_name=source_planet.name if source_planet else None,
+                target_planet_name=target_planet.name if target_planet else None,
+                mission_type=m.mission_type,
+                ship_count=m.ship_count,
+                gold_carried=m.gold_carried,
+                departure_time=m.departure_time,
+                arrival_time=m.arrival_time,
+                return_time=m.return_time,
+                status=m.status,
+                owner_id=m.owner_id,
+            )
+        )
+
+    # Incoming fleets (targeting user's planet, outbound status)
+    incoming = []
+    if planet:
+        incoming_missions = (
+            db.query(models.FleetMission)
+            .filter(
+                models.FleetMission.target_planet_id == planet.id,
+                models.FleetMission.status == "outbound",
+                models.FleetMission.owner_id != current_user.id,
+            )
+            .all()
+        )
+        for m in incoming_missions:
+            source_planet = (
+                db.query(models.Planet)
+                .filter(models.Planet.id == m.source_planet_id)
+                .first()
+            )
+            owner = db.query(models.User).filter(models.User.id == m.owner_id).first()
+            incoming.append(
+                schemas.IncomingFleetResponse(
+                    id=m.id,
+                    source_planet_name=source_planet.name
+                    if source_planet
+                    else "Unknown",
+                    source_owner_username=owner.username if owner else "Unknown",
+                    ship_count=m.ship_count,
+                    mission_type=m.mission_type,
+                    arrival_time=m.arrival_time,
+                )
+            )
+
+    return schemas.FleetMissionsListResponse(
+        outgoing=outgoing_responses, incoming=incoming
+    )
+
+
+# Message Endpoints
+
+
+@app.get("/game/messages", response_model=schemas.MessageListResponse)
+def get_messages(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all messages for the current user, ordered by most recent first.
+    """
+    messages = (
+        db.query(models.Message)
+        .filter(models.Message.user_id == current_user.id)
+        .order_by(models.Message.created_at.desc())
+        .all()
+    )
+
+    unread_count = sum(1 for m in messages if not m.is_read)
+
+    return schemas.MessageListResponse(
+        messages=[
+            schemas.MessageResponse(
+                id=m.id,
+                subject=m.subject,
+                body=m.body,
+                is_read=bool(m.is_read),
+                created_at=m.created_at,
+            )
+            for m in messages
+        ],
+        unread_count=unread_count,
+    )
+
+
+@app.patch("/game/messages/{message_id}/read")
+def mark_message_read(
+    message_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Mark a message as read.
+    """
+    message = (
+        db.query(models.Message)
+        .filter(
+            models.Message.id == message_id,
+            models.Message.user_id == current_user.id,
+        )
+        .first()
+    )
+
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    message.is_read = 1
+    db.commit()
+
+    return {"status": "Message marked as read"}

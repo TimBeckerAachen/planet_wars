@@ -6,8 +6,9 @@ import GameLayout from './components/GameLayout';
 import OverviewPage from './pages/OverviewPage';
 import MapPage from './pages/MapPage';
 import BuildingDetailsPage from './pages/BuildingDetailsPage';
+import MailboxPage from './pages/MailboxPage';
 
-type PageState = { view: 'overview' | 'map' } | { view: 'building', id: number };
+type PageState = { view: 'overview' | 'map' | 'mailbox' } | { view: 'building', id: number };
 
 function MainApp() {
     const { user, loading } = useAuth();
@@ -27,12 +28,17 @@ function MainApp() {
     if (!user) return <AuthPage />;
 
     // Helper for GameLayout nav
-    const handleNav = (page: 'overview' | 'map') => setPageState({ view: page });
+    const handleNav = (page: 'overview' | 'map' | 'mailbox') => setPageState({ view: page });
+    const getCurrentPage = () => {
+        if (pageState.view === 'map') return 'map';
+        if (pageState.view === 'mailbox') return 'mailbox';
+        return 'overview';
+    };
 
     return (
         <GameLayout
             user={user}
-            currentPage={pageState.view === 'map' ? 'map' : 'overview'}
+            currentPage={getCurrentPage()}
             onNavigate={handleNav}
         >
             {pageState.view === 'overview' && (
@@ -41,6 +47,10 @@ function MainApp() {
 
             {pageState.view === 'map' && (
                 <MapPage currentPlanetId={undefined} />
+            )}
+
+            {pageState.view === 'mailbox' && (
+                <MailboxPage />
             )}
 
             {pageState.view === 'building' && (

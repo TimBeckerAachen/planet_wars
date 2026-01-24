@@ -5,8 +5,8 @@ import { logout } from '../api';
 interface GameLayoutProps {
     user: User;
     children: React.ReactNode;
-    onNavigate: (page: 'overview' | 'map') => void;
-    currentPage: 'overview' | 'map';
+    onNavigate: (page: 'overview' | 'map' | 'mailbox') => void;
+    currentPage: 'overview' | 'map' | 'mailbox';
 }
 
 import { useGame } from '../GameContext';
@@ -76,6 +76,20 @@ export default function GameLayout({ children, onNavigate, currentPage }: GameLa
                             }}
                         >
                             Map
+                        </button>
+                        <button
+                            onClick={() => onNavigate('mailbox')}
+                            style={{
+                                background: currentPage === 'mailbox' ? 'rgba(255,255,255,0.2)' : 'transparent',
+                                border: 'none',
+                                color: 'white',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                position: 'relative'
+                            }}
+                        >
+                            📬 Mailbox
                         </button>
                     </nav>
                 </div>

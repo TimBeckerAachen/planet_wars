@@ -236,6 +236,98 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /game/fleet/send:
+    post:
+      summary: Send Fleet
+      description: 'Send a fleet on a mission (attack or transport).
+
+
+        - **target_planet_id**: ID of the destination planet
+
+        - **mission_type**: ''attack'' or ''transport''
+
+        - **ship_count**: Number of spaceships to send
+
+        - **gold_amount**: Amount of gold to transport (transport only, max 10 per
+        ship)'
+      operationId: send_fleet_game_fleet_send_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FleetSendRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FleetMissionResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /game/fleet/missions:
+    get:
+      summary: Get Fleet Missions
+      description: 'Get all active fleet missions for the current user.
+
+        Returns both outgoing (owned by user) and incoming (targeting user''s planet).'
+      operationId: get_fleet_missions_game_fleet_missions_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FleetMissionsListResponse'
+      security:
+      - HTTPBearer: []
+  /game/messages:
+    get:
+      summary: Get Messages
+      description: Get all messages for the current user, ordered by most recent first.
+      operationId: get_messages_game_messages_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageListResponse'
+      security:
+      - HTTPBearer: []
+  /game/messages/{message_id}/read:
+    patch:
+      summary: Mark Message Read
+      description: Mark a message as read.
+      operationId: mark_message_read_game_messages__message_id__read_patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Message Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
     AuthResponse:
@@ -387,6 +479,115 @@ components:
       - production
       - level
       title: ConstructionOption
+    FleetMissionResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        source_planet_id:
+          type: integer
+          title: Source Planet Id
+        target_planet_id:
+          type: integer
+          title: Target Planet Id
+        source_planet_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Planet Name
+        target_planet_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Planet Name
+        mission_type:
+          type: string
+          title: Mission Type
+        ship_count:
+          type: integer
+          title: Ship Count
+        gold_carried:
+          type: integer
+          title: Gold Carried
+        departure_time:
+          type: string
+          format: date-time
+          title: Departure Time
+        arrival_time:
+          type: string
+          format: date-time
+          title: Arrival Time
+        return_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Return Time
+        status:
+          type: string
+          title: Status
+        owner_id:
+          type: integer
+          title: Owner Id
+      type: object
+      required:
+      - id
+      - source_planet_id
+      - target_planet_id
+      - mission_type
+      - ship_count
+      - gold_carried
+      - departure_time
+      - arrival_time
+      - status
+      - owner_id
+      title: FleetMissionResponse
+      description: Response for a fleet mission
+    FleetMissionsListResponse:
+      properties:
+        outgoing:
+          items:
+            $ref: '#/components/schemas/FleetMissionResponse'
+          type: array
+          title: Outgoing
+          default: []
+        incoming:
+          items:
+            $ref: '#/components/schemas/IncomingFleetResponse'
+          type: array
+          title: Incoming
+          default: []
+      type: object
+      title: FleetMissionsListResponse
+      description: List of fleet missions
+    FleetSendRequest:
+      properties:
+        target_planet_id:
+          type: integer
+          title: Target Planet Id
+          description: ID of the target planet
+        mission_type:
+          type: string
+          title: Mission Type
+          description: '''attack'' or ''transport'''
+        ship_count:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Ship Count
+          description: Number of ships to send
+        gold_amount:
+          type: integer
+          minimum: 0.0
+          title: Gold Amount
+          description: Gold to transport (transport only)
+          default: 0
+      type: object
+      required:
+      - target_planet_id
+      - mission_type
+      - ship_count
+      title: FleetSendRequest
+      description: Request to send a fleet on a mission
     GameStateResponse:
       properties:
         user:
@@ -425,6 +626,37 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
+    IncomingFleetResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        source_planet_name:
+          type: string
+          title: Source Planet Name
+        source_owner_username:
+          type: string
+          title: Source Owner Username
+        ship_count:
+          type: integer
+          title: Ship Count
+        mission_type:
+          type: string
+          title: Mission Type
+        arrival_time:
+          type: string
+          format: date-time
+          title: Arrival Time
+      type: object
+      required:
+      - id
+      - source_planet_name
+      - source_owner_username
+      - ship_count
+      - mission_type
+      - arrival_time
+      title: IncomingFleetResponse
+      description: Information about an incoming fleet
     MapStateResponse:
       properties:
         planets:
@@ -436,6 +668,49 @@ components:
       required:
       - planets
       title: MapStateResponse
+    MessageListResponse:
+      properties:
+        messages:
+          items:
+            $ref: '#/components/schemas/MessageResponse'
+          type: array
+          title: Messages
+        unread_count:
+          type: integer
+          title: Unread Count
+      type: object
+      required:
+      - messages
+      - unread_count
+      title: MessageListResponse
+      description: List of messages
+    MessageResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        subject:
+          type: string
+          title: Subject
+        body:
+          type: string
+          title: Body
+        is_read:
+          type: boolean
+          title: Is Read
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - subject
+      - body
+      - is_read
+      - created_at
+      title: MessageResponse
+      description: Response for a single message
     PlanetRenameRequest:
       properties:
         name:

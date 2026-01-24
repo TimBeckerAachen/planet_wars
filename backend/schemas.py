@@ -149,3 +149,85 @@ class AuthErrorResponse(BaseModel):
     """Schema for authentication error responses"""
 
     detail: str
+
+
+# Fleet Mission Schemas
+
+
+class FleetSendRequest(BaseModel):
+    """Request to send a fleet on a mission"""
+
+    target_planet_id: int = Field(..., description="ID of the target planet")
+    mission_type: str = Field(..., description="'attack' or 'transport'")
+    ship_count: int = Field(..., gt=0, description="Number of ships to send")
+    gold_amount: int = Field(
+        default=0, ge=0, description="Gold to transport (transport only)"
+    )
+
+    @validator("mission_type")
+    def validate_mission_type(cls, v):
+        if v not in ("attack", "transport"):
+            raise ValueError("mission_type must be 'attack' or 'transport'")
+        return v
+
+
+class FleetMissionResponse(BaseModel):
+    """Response for a fleet mission"""
+
+    id: int
+    source_planet_id: int
+    target_planet_id: int
+    source_planet_name: Optional[str] = None
+    target_planet_name: Optional[str] = None
+    mission_type: str
+    ship_count: int
+    gold_carried: int
+    departure_time: datetime
+    arrival_time: datetime
+    return_time: Optional[datetime] = None
+    status: str
+    owner_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class IncomingFleetResponse(BaseModel):
+    """Information about an incoming fleet"""
+
+    id: int
+    source_planet_name: str
+    source_owner_username: str
+    ship_count: int
+    mission_type: str
+    arrival_time: datetime
+
+
+class FleetMissionsListResponse(BaseModel):
+    """List of fleet missions"""
+
+    outgoing: list[FleetMissionResponse] = []
+    incoming: list[IncomingFleetResponse] = []
+
+
+# Message Schemas
+
+
+class MessageResponse(BaseModel):
+    """Response for a single message"""
+
+    id: int
+    subject: str
+    body: str
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class MessageListResponse(BaseModel):
+    """List of messages"""
+
+    messages: list[MessageResponse]
+    unread_count: int

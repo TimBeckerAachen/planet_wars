@@ -165,3 +165,50 @@ export async function renamePlanet(name: string): Promise<import('./types').Plan
     });
 }
 
+// Fleet Mission API
+
+/**
+ * Send a fleet on a mission
+ */
+export async function sendFleet(
+    targetPlanetId: number,
+    missionType: 'attack' | 'transport',
+    shipCount: number,
+    goldAmount: number = 0
+): Promise<import('./types').FleetMission> {
+    return apiRequest<import('./types').FleetMission>('/game/fleet/send', {
+        method: 'POST',
+        body: JSON.stringify({
+            target_planet_id: targetPlanetId,
+            mission_type: missionType,
+            ship_count: shipCount,
+            gold_amount: goldAmount
+        })
+    });
+}
+
+/**
+ * Get active fleet missions
+ */
+export async function getFleetMissions(): Promise<import('./types').FleetMissionsState> {
+    return apiRequest<import('./types').FleetMissionsState>('/game/fleet/missions');
+}
+
+// Message API
+
+/**
+ * Get all messages
+ */
+export async function getMessages(): Promise<import('./types').MessageListState> {
+    return apiRequest<import('./types').MessageListState>('/game/messages');
+}
+
+/**
+ * Mark a message as read
+ */
+export async function markMessageRead(messageId: number): Promise<{ status: string }> {
+    return apiRequest<{ status: string }>(`/game/messages/${messageId}/read`, {
+        method: 'PATCH'
+    });
+}
+
