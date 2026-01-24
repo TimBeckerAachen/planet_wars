@@ -42,9 +42,10 @@ export interface ConstructionOption {
 export interface GameState {
     user: User;
     planet: Planet;
-    buildings: Building[];
+    buildings: BuildingDetails[];
     units: Unit[];
     construction_options: ConstructionOption[];
+    unread_messages_count: number;
 }
 
 

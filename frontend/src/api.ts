@@ -229,3 +229,12 @@ export async function sendMessage(
         })
     });
 }
+
+/**
+ * Delete a message
+ */
+export async function deleteMessage(messageId: number): Promise<{ status: string }> {
+    return apiRequest<{ status: string }>(`/game/messages/${messageId}`, {
+        method: 'DELETE'
+    });
+}

@@ -13,7 +13,7 @@ import { useGame } from '../GameContext';
 
 export default function GameLayout({ children, onNavigate, currentPage }: GameLayoutProps) {
     const [showSettings, setShowSettings] = useState(false);
-    const { displayGold } = useGame();
+    const { displayGold, gameState } = useGame();
 
     // Helper formats numbers with commas
     const formatGold = (amount: number) => Math.floor(amount).toLocaleString();
@@ -90,6 +90,22 @@ export default function GameLayout({ children, onNavigate, currentPage }: GameLa
                             }}
                         >
                             📬 Mailbox
+                            {gameState && gameState.unread_messages_count > 0 && (
+                                <span style={{
+                                    position: 'absolute',
+                                    top: '-5px',
+                                    right: '-5px',
+                                    background: '#ef4444',
+                                    color: 'white',
+                                    fontSize: '0.7em',
+                                    padding: '2px 6px',
+                                    borderRadius: '10px',
+                                    fontWeight: 'bold',
+                                    border: '1px solid #0f0c29'
+                                }}>
+                                    {gameState.unread_messages_count}
+                                </span>
+                            )}
                         </button>
                     </nav>
                 </div>

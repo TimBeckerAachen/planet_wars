@@ -91,3 +91,61 @@ def test_send_message_to_player(client):
     assert len(data["messages"]) == 1
     assert data["messages"][0]["subject"] == "Hello!"
     assert data["unread_count"] == 1
+
+
+def test_delete_message(client):
+    """Test deleting a message."""
+    # Create user
+    response = client.post(
+        "/auth/signup",
+        json={
+            "username": "deleter",
+            "email": "delete@test.com",
+            "password": "password123",
+        },
+    )
+    token = response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Retrieve own ID
+    game_state = client.get("/game/state", headers=headers).json()
+    user_id = game_state["user"]["id"]
+
+    # Manually create a message (since send_message prevents self-sending)
+    # We'll use a second user to send a message
+    response2 = client.post(
+        "/auth/signup",
+        json={
+            "username": "sender2",
+            "email": "sender2@test.com",
+            "password": "password123",
+        },
+    )
+    sender_token = response2.json()["access_token"]
+    sender_headers = {"Authorization": f"Bearer {sender_token}"}
+
+    client.post(
+        "/game/messages/send",
+        json={
+            "recipient_username": "deleter",
+            "subject": "Delete me",
+            "body": "Trash content",
+        },
+        headers=sender_headers,
+    )
+
+    # Verify message exists
+    response = client.get("/game/messages", headers=headers)
+    data = response.json()
+    assert len(data["messages"]) == 1
+    msg_id = data["messages"][0]["id"]
+
+    # Delete message
+    response = client.delete(f"/game/messages/{msg_id}", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["status"] == "Message deleted"
+
+    # Verify gone
+    response = client.get("/game/messages", headers=headers)
+    data = response.json()
+    assert len(data["messages"]) == 0

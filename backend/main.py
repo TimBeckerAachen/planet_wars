@@ -864,3 +864,30 @@ def send_message(
     db.refresh(message)
 
     return message
+
+
+@app.delete("/game/messages/{message_id}")
+def delete_message(
+    message_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Delete a message from the user's mailbox.
+    """
+    message = (
+        db.query(models.Message)
+        .filter(
+            models.Message.id == message_id,
+            models.Message.user_id == current_user.id,
+        )
+        .first()
+    )
+
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    db.delete(message)
+    db.commit()
+
+    return {"status": "Message deleted"}

@@ -30,7 +30,8 @@ describe('OverviewPage', () => {
             { id: 1, name: 'gold_mine', level: 1, is_constructing: false, finish_time: null }
         ],
         units: [],
-        construction_options: []
+        construction_options: [],
+        unread_messages_count: 0
     };
 
     beforeEach(() => {

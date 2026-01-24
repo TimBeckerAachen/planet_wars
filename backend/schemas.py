@@ -124,6 +124,7 @@ class GameStateResponse(BaseModel):
     buildings: list[BuildingResponse]
     units: list[UnitResponse]
     construction_options: list[ConstructionOption] = []
+    unread_messages_count: int = 0
 
 
 class MapStateResponse(BaseModel):
