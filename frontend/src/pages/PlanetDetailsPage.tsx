@@ -62,6 +62,33 @@ export default function PlanetDetailsPage({ planetId, onBack }: PlanetDetailsPag
     const isOwnPlanet = planet && gameState && planet.owner_id === gameState.user.id;
     const isSourcePlanet = planet && gameState && planet.id === gameState.planet.id;
 
+    // Live clock for updates
+    const [now, setNow] = useState(Date.now());
+
+    useEffect(() => {
+        const interval = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const missionCardStyle = (type: 'primary' | 'info' | 'warning' | 'error'): React.CSSProperties => {
+        const colors = {
+            primary: { bg: 'rgba(59, 130, 246, 0.1)', border: 'rgba(59, 130, 246, 0.3)' },
+            info: { bg: 'rgba(59, 130, 246, 0.05)', border: 'rgba(59, 130, 246, 0.2)' },
+            warning: { bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.3)' },
+            error: { bg: 'rgba(239, 68, 68, 0.1)', border: 'rgba(239, 68, 68, 0.3)' }
+        };
+        return {
+            padding: '0.75rem', 
+            background: colors[type].bg, 
+            borderRadius: '6px',
+            marginBottom: '0.5rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            border: `1px solid ${colors[type].border}`
+        };
+    };
+
     // Calculate travel time (Manhattan distance * 10 seconds)
     const calculateTravelTime = () => {
         if (!planet || !gameState) return 0;
@@ -137,7 +164,7 @@ export default function PlanetDetailsPage({ planetId, onBack }: PlanetDetailsPag
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                <button onClick={onBack} style={{ ...buttonStyle, padding: '0.5rem 1rem' }}>
+                <button onClick={onBack} style={{ ...buttonStyle, background: '#374151', padding: '0.5rem 1rem' }}>
                     ← Back
                 </button>
                 <h2 style={{ margin: 0, flex: 1 }}>🌍 {planet.name}</h2>
@@ -164,34 +191,76 @@ export default function PlanetDetailsPage({ planetId, onBack }: PlanetDetailsPag
                 </div>
             </div>
 
-            {/* Active Missions to this Planet */}
-            {missionsToThisPlanet.length > 0 && (
-                <div style={{ ...cardStyle, background: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
-                    <h4 style={{ margin: '0 0 0.75rem 0', color: '#60a5fa' }}>🚀 Active Missions to this Planet</h4>
-                    {missionsToThisPlanet.map(mission => {
-                        const arrival = new Date(mission.arrival_time);
-                        const now = new Date();
-                        const secsRemaining = Math.max(0, Math.floor((arrival.getTime() - now.getTime()) / 1000));
+            {/* Missions Section */}
+            {(missionsToThisPlanet.length > 0 || (isOwnPlanet && fleetMissions && (fleetMissions.incoming.length > 0 || fleetMissions.outgoing.length > 0))) && (
+                <div style={{ ...cardStyle, background: 'rgba(0,0,0,0.2)', padding: '1rem' }}>
+                    <h3 style={{ margin: '0 0 1rem 0' }}>🚀 Active Fleets</h3>
+                    
+                    {/* 1. Incoming to ME (Only visible on own planet) */}
+                    {isOwnPlanet && fleetMissions?.incoming.map(mission => {
+                        const arrival = new Date(mission.arrival_time).getTime();
+                        const secsRemaining = Math.max(0, Math.floor((arrival - now) / 1000));
+                        const isAttack = mission.mission_type === 'attack';
                         return (
-                            <div key={mission.id} style={{ 
-                                padding: '0.5rem', 
-                                background: 'rgba(0,0,0,0.2)', 
-                                borderRadius: '6px',
-                                marginBottom: '0.5rem',
-                                display: 'flex',
-                                justifyContent: 'space-between'
-                            }}>
-                                <span>
-                                    {mission.mission_type === 'attack' ? '⚔️' : '📦'} {mission.ship_count} ships
-                                    {mission.gold_carried > 0 && ` + ${mission.gold_carried} gold`}
-                                </span>
-                                <span style={{ color: '#60a5fa' }}>
-                                    {mission.status === 'in_transit' 
-                                        ? `ETA: ${formatTime(secsRemaining)}`
-                                        : mission.status}
-                                </span>
+                            <div key={mission.id} style={missionCardStyle(isAttack ? 'error' : 'warning')}>
+                                <div>
+                                    <div style={{ fontWeight: 'bold', color: isAttack ? '#ef4444' : '#fbbf24' }}>
+                                        {isAttack ? '⚔️ Incoming Attack' : '📦 Incoming Transport'}
+                                    </div>
+                                    <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                                        {mission.ship_count} ships from {mission.source_owner_username}
+                                    </div>
+                                </div>
+                                <div style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
+                                    {formatTime(secsRemaining)}
+                                </div>
                             </div>
                         );
+                    })}
+
+                    {/* 2. My Outgoing to THIS planet */}
+                    {!isOwnPlanet && missionsToThisPlanet.map(mission => {
+                        const arrival = new Date(mission.arrival_time).getTime();
+                        const secsRemaining = Math.max(0, Math.floor((arrival - now) / 1000));
+                        const isAttack = mission.mission_type === 'attack';
+                        return (
+                            <div key={mission.id} style={missionCardStyle('primary')}>
+                                <div>
+                                    <div style={{ fontWeight: 'bold', color: isAttack ? '#ef4444' : '#60a5fa' }}>
+                                        {isAttack ? '⚔️ Attacking' : '📦 Transporting'}
+                                    </div>
+                                    <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                                        {mission.ship_count} ships from You
+                                        {mission.gold_carried > 0 && ` + ${mission.gold_carried} gold`}
+                                    </div>
+                                </div>
+                                <div style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
+                                    {formatTime(secsRemaining)}
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {/* 3. My Outgoing (General) - Only shown on My Planet Details to show what's leaving */}
+                    {isOwnPlanet && fleetMissions?.outgoing.map(mission => {
+                         const arrival = new Date(mission.arrival_time).getTime();
+                         const secsRemaining = Math.max(0, Math.floor((arrival - now) / 1000));
+                         const isAttack = mission.mission_type === 'attack';
+                         return (
+                             <div key={mission.id} style={missionCardStyle('info')}>
+                                 <div>
+                                     <div style={{ fontWeight: 'bold', color: isAttack ? '#ef4444' : '#60a5fa' }}>
+                                         {isAttack ? '⚔️ Outgoing Attack' : '📦 Outgoing Transport'}
+                                     </div>
+                                     <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                                         {mission.ship_count} ships → {mission.target_planet_name || `Planet ${mission.target_planet_id}`}
+                                     </div>
+                                 </div>
+                                 <div style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
+                                     {formatTime(secsRemaining)}
+                                 </div>
+                             </div>
+                         );
                     })}
                 </div>
             )}

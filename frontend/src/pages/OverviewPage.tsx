@@ -18,6 +18,18 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
     const [isRenaming, setIsRenaming] = useState(false);
     const [planetNameInput, setPlanetNameInput] = useState('');
 
+    // Live clock for updates
+    const [now, setNow] = useState(Date.now());
+
+    useEffect(() => {
+        const interval = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Helper for mission description
+    const getMissionIcon = (type: string) => type === 'attack' ? '⚔️' : '📦';
+    const getMissionLabel = (type: string) => type === 'attack' ? 'Attack' : 'Transport';
+
     // Construction Countdown Effect
     useEffect(() => {
         if (!gameState) return;
@@ -198,23 +210,37 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
                             <div style={{ marginBottom: '1rem' }}>
                                 <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#60a5fa' }}>Outgoing</h4>
                                 {fleetMissions.outgoing.map(mission => {
-                                    const arrival = new Date(mission.arrival_time);
-                                    const now = new Date();
-                                    const secsRemaining = Math.max(0, Math.floor((arrival.getTime() - now.getTime()) / 1000));
+                                    const arrival = new Date(mission.arrival_time).getTime();
+                                    const secsRemaining = Math.max(0, Math.floor((arrival - now) / 1000));
+                                    const isAttack = mission.mission_type === 'attack';
+                                    
                                     return (
                                         <div key={mission.id} style={{
-                                            padding: '0.5rem',
+                                            padding: '0.75rem',
                                             background: 'rgba(59, 130, 246, 0.1)',
                                             borderRadius: '6px',
                                             marginBottom: '0.5rem',
                                             display: 'flex',
                                             justifyContent: 'space-between',
+                                            alignItems: 'center',
                                             border: '1px solid rgba(59, 130, 246, 0.2)'
                                         }}>
-                                            <span>
-                                                {mission.mission_type === 'attack' ? '⚔️' : '📦'} {mission.ship_count} ships → {mission.target_planet_name || `Planet ${mission.target_planet_id}`}
-                                            </span>
-                                            <span style={{ color: '#60a5fa', fontFamily: 'monospace' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                                <span style={{ fontWeight: 'bold', color: isAttack ? '#ef4444' : '#60a5fa' }}>
+                                                    {getMissionIcon(mission.mission_type)} {getMissionLabel(mission.mission_type)}
+                                                </span>
+                                                <span style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                                                    {mission.ship_count} ships ➔ {mission.target_planet_name || `Planet ${mission.target_planet_id}`}
+                                                </span>
+                                            </div>
+                                            <span style={{ 
+                                                color: '#60a5fa', 
+                                                fontFamily: 'monospace', 
+                                                fontWeight: 'bold',
+                                                background: 'rgba(0,0,0,0.3)',
+                                                padding: '0.2rem 0.5rem',
+                                                borderRadius: '4px'
+                                            }}>
                                                 {mission.status === 'in_transit' 
                                                     ? `${formatTime(secsRemaining)}`
                                                     : mission.status}
@@ -228,23 +254,37 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
                             <div>
                                 <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#f87171' }}>Incoming</h4>
                                 {fleetMissions.incoming.map(fleet => {
-                                    const arrival = new Date(fleet.arrival_time);
-                                    const now = new Date();
-                                    const secsRemaining = Math.max(0, Math.floor((arrival.getTime() - now.getTime()) / 1000));
+                                    const arrival = new Date(fleet.arrival_time).getTime();
+                                    const secsRemaining = Math.max(0, Math.floor((arrival - now) / 1000));
+                                    const isAttack = fleet.mission_type === 'attack';
+
                                     return (
                                         <div key={fleet.id} style={{
-                                            padding: '0.5rem',
+                                            padding: '0.75rem',
                                             background: 'rgba(248, 113, 113, 0.1)',
                                             borderRadius: '6px',
                                             marginBottom: '0.5rem',
                                             display: 'flex',
                                             justifyContent: 'space-between',
+                                            alignItems: 'center',
                                             border: '1px solid rgba(248, 113, 113, 0.2)'
                                         }}>
-                                            <span>
-                                                {fleet.mission_type === 'attack' ? '⚔️' : '📦'} {fleet.ship_count} ships from {fleet.source_owner_username}
-                                            </span>
-                                            <span style={{ color: '#f87171', fontFamily: 'monospace' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                                <span style={{ fontWeight: 'bold', color: isAttack ? '#ef4444' : '#fbbf24' }}>
+                                                    {getMissionIcon(fleet.mission_type)} {getMissionLabel(fleet.mission_type)}
+                                                </span>
+                                                <span style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                                                     {fleet.ship_count} ships from {fleet.source_owner_username}
+                                                </span>
+                                            </div>
+                                            <span style={{ 
+                                                color: '#f87171', 
+                                                fontFamily: 'monospace',
+                                                fontWeight: 'bold',
+                                                background: 'rgba(0,0,0,0.3)',
+                                                padding: '0.2rem 0.5rem',
+                                                borderRadius: '4px'
+                                            }}>
                                                 {formatTime(secsRemaining)}
                                             </span>
                                         </div>
