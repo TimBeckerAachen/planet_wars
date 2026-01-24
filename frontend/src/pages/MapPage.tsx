@@ -9,7 +9,7 @@ interface FleetModalState {
     goldAmount: number;
 }
 
-export default function MapPage({ currentPlanetId }: { currentPlanetId?: number }) {
+export default function MapPage({ currentPlanetId: _currentPlanetId }: { currentPlanetId?: number }) {
     const [mapState, setMapState] = useState<MapState | null>(null);
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [loading, setLoading] = useState(true);
