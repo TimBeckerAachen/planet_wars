@@ -7,8 +7,12 @@ import OverviewPage from './pages/OverviewPage';
 import MapPage from './pages/MapPage';
 import BuildingDetailsPage from './pages/BuildingDetailsPage';
 import MailboxPage from './pages/MailboxPage';
+import PlanetDetailsPage from './pages/PlanetDetailsPage';
 
-type PageState = { view: 'overview' | 'map' | 'mailbox' } | { view: 'building', id: number };
+type PageState =
+    | { view: 'overview' | 'map' | 'mailbox' }
+    | { view: 'building', id: number }
+    | { view: 'planet', id: number };
 
 function MainApp() {
     const { user, loading } = useAuth();
@@ -30,7 +34,7 @@ function MainApp() {
     // Helper for GameLayout nav
     const handleNav = (page: 'overview' | 'map' | 'mailbox') => setPageState({ view: page });
     const getCurrentPage = () => {
-        if (pageState.view === 'map') return 'map';
+        if (pageState.view === 'map' || pageState.view === 'planet') return 'map';
         if (pageState.view === 'mailbox') return 'mailbox';
         return 'overview';
     };
@@ -46,7 +50,7 @@ function MainApp() {
             )}
 
             {pageState.view === 'map' && (
-                <MapPage currentPlanetId={undefined} />
+                <MapPage onPlanetClick={(id) => setPageState({ view: 'planet', id })} />
             )}
 
             {pageState.view === 'mailbox' && (
@@ -57,6 +61,13 @@ function MainApp() {
                 <BuildingDetailsPage
                     buildingId={pageState.id}
                     onBack={() => setPageState({ view: 'overview' })}
+                />
+            )}
+
+            {pageState.view === 'planet' && (
+                <PlanetDetailsPage
+                    planetId={pageState.id}
+                    onBack={() => setPageState({ view: 'map' })}
                 />
             )}
         </GameLayout>

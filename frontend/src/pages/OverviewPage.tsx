@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { buildBuilding, renamePlanet } from '../api';
+import { buildBuilding, renamePlanet, getFleetMissions } from '../api';
 import { useGame } from '../GameContext';
+import { FleetMissionsState } from '../types';
 
 interface OverviewPageProps {
     onBuildingClick: (id: number) => void;
@@ -8,6 +9,7 @@ interface OverviewPageProps {
 
 export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
     const { gameState, loading, refreshState } = useGame();
+    const [fleetMissions, setFleetMissions] = useState<FleetMissionsState | null>(null);
 
     // State for construction timers (visual only)
     const [timers, setTimers] = useState<Record<number, string>>({});
@@ -45,6 +47,28 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
         const interval = setInterval(updateTimers, 1000);
         return () => clearInterval(interval);
     }, [gameState]);
+
+    // Load fleet missions
+    useEffect(() => {
+        const loadFleets = async () => {
+            try {
+                const missions = await getFleetMissions();
+                setFleetMissions(missions);
+            } catch (err) {
+                console.error('Failed to load fleet missions:', err);
+            }
+        };
+        loadFleets();
+        const interval = setInterval(loadFleets, 5000); // Refresh every 5s
+        return () => clearInterval(interval);
+    }, []);
+
+    const formatTime = (seconds: number) => {
+        if (seconds < 60) return `${seconds}s`;
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+    };
 
     const handleBuild = async (name: string) => {
         try {
@@ -165,6 +189,71 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
                         </div>
                     )}
                 </div>
+
+                {/* Fleet Missions */}
+                {fleetMissions && (fleetMissions.outgoing.length > 0 || fleetMissions.incoming.length > 0) && (
+                    <div className="section">
+                        <h3>🚀 Fleet Missions</h3>
+                        {fleetMissions.outgoing.length > 0 && (
+                            <div style={{ marginBottom: '1rem' }}>
+                                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#60a5fa' }}>Outgoing</h4>
+                                {fleetMissions.outgoing.map(mission => {
+                                    const arrival = new Date(mission.arrival_time);
+                                    const now = new Date();
+                                    const secsRemaining = Math.max(0, Math.floor((arrival.getTime() - now.getTime()) / 1000));
+                                    return (
+                                        <div key={mission.id} style={{
+                                            padding: '0.5rem',
+                                            background: 'rgba(59, 130, 246, 0.1)',
+                                            borderRadius: '6px',
+                                            marginBottom: '0.5rem',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            border: '1px solid rgba(59, 130, 246, 0.2)'
+                                        }}>
+                                            <span>
+                                                {mission.mission_type === 'attack' ? '⚔️' : '📦'} {mission.ship_count} ships → {mission.target_planet_name || `Planet ${mission.target_planet_id}`}
+                                            </span>
+                                            <span style={{ color: '#60a5fa', fontFamily: 'monospace' }}>
+                                                {mission.status === 'in_transit' 
+                                                    ? `${formatTime(secsRemaining)}`
+                                                    : mission.status}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        {fleetMissions.incoming.length > 0 && (
+                            <div>
+                                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#f87171' }}>Incoming</h4>
+                                {fleetMissions.incoming.map(fleet => {
+                                    const arrival = new Date(fleet.arrival_time);
+                                    const now = new Date();
+                                    const secsRemaining = Math.max(0, Math.floor((arrival.getTime() - now.getTime()) / 1000));
+                                    return (
+                                        <div key={fleet.id} style={{
+                                            padding: '0.5rem',
+                                            background: 'rgba(248, 113, 113, 0.1)',
+                                            borderRadius: '6px',
+                                            marginBottom: '0.5rem',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            border: '1px solid rgba(248, 113, 113, 0.2)'
+                                        }}>
+                                            <span>
+                                                {fleet.mission_type === 'attack' ? '⚔️' : '📦'} {fleet.ship_count} ships from {fleet.source_owner_username}
+                                            </span>
+                                            <span style={{ color: '#f87171', fontFamily: 'monospace' }}>
+                                                {formatTime(secsRemaining)}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Right Column: Construction */}

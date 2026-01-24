@@ -28,6 +28,7 @@ dev = [
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-ra -q --cov=."
+pythonpath = ["."]
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

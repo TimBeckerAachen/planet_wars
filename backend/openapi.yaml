@@ -328,6 +328,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /game/messages/send:
+    post:
+      summary: Send Message
+      description: Send a message to another player.
+      operationId: send_message_game_messages_send_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
 components:
   schemas:
     AuthResponse:
@@ -776,6 +802,24 @@ components:
       - duration
       - base_time
       title: ProductionOption
+    SendMessageRequest:
+      properties:
+        recipient_username:
+          type: string
+          title: Recipient Username
+        subject:
+          type: string
+          title: Subject
+        body:
+          type: string
+          title: Body
+      type: object
+      required:
+      - recipient_username
+      - subject
+      - body
+      title: SendMessageRequest
+      description: Request to send a message to another player
     UnitResponse:
       properties:
         id:

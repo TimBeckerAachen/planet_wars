@@ -231,3 +231,11 @@ class MessageListResponse(BaseModel):
 
     messages: list[MessageResponse]
     unread_count: int
+
+
+class SendMessageRequest(BaseModel):
+    """Request to send a message to another player"""
+
+    recipient_username: str
+    subject: str
+    body: str

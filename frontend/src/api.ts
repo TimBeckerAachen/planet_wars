@@ -212,3 +212,20 @@ export async function markMessageRead(messageId: number): Promise<{ status: stri
     });
 }
 
+/**
+ * Send a message to another player
+ */
+export async function sendMessage(
+    recipientUsername: string,
+    subject: string,
+    body: string
+): Promise<import('./types').Message> {
+    return apiRequest<import('./types').Message>('/game/messages/send', {
+        method: 'POST',
+        body: JSON.stringify({
+            recipient_username: recipientUsername,
+            subject,
+            body
+        })
+    });
+}

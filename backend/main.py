@@ -828,3 +828,39 @@ def mark_message_read(
     db.commit()
 
     return {"status": "Message marked as read"}
+
+
+@app.post("/game/messages/send", response_model=schemas.MessageResponse)
+def send_message(
+    request: schemas.SendMessageRequest,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Send a message to another player.
+    """
+    # Find recipient by username
+    recipient = (
+        db.query(models.User)
+        .filter(models.User.username == request.recipient_username)
+        .first()
+    )
+
+    if not recipient:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    if recipient.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot send message to yourself")
+
+    # Create message for recipient
+    message = models.Message(
+        user_id=recipient.id,
+        subject=request.subject,
+        body=f"From: {current_user.username}\n\n{request.body}",
+        is_read=0,
+    )
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+
+    return message

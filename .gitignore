@@ -216,3 +216,7 @@ yarn-error.log*
 dist/
 dist-ssr/
 *.local
+
+# local files
+backend/debug_models.py
+backend/dump_openapi.py
