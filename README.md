@@ -8,6 +8,7 @@
 - **Frontend Application**: [https://planetwars-frontend.onrender.com](https://planetwars-frontend.onrender.com)
 - **Backend API Docs**: [https://planetwars-backend.onrender.com/docs](https://planetwars-backend.onrender.com/docs)
 
+Note: You might have to start both services independently if render terminated them due to inactivity. 
 
 ## The Problem
 Players need a persistent, competitive environment to test strategic resource management and fleet command skills against others in real-time. The game solves this by providing a stateful world where actions (like building construction or fleet travel) take real time to complete, requiring long-term planning and coordination.
