@@ -6,7 +6,7 @@ from config import settings
 
 # Initialize Rate Limiter
 # key_func=get_remote_address uses the IP address of the client
-limiter = Limiter(key_func=get_remote_address, headers_enabled=True)
+limiter = Limiter(key_func=get_remote_address, enabled=settings.limiter_enabled)
 
 
 def verify_client_source(

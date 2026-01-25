@@ -6,10 +6,8 @@ import models
 from database import get_db
 from main import app
 
-client = TestClient(app)
 
-
-def test_change_password(db_session: Session):
+def test_change_password(client, db_session: Session):
     # Setup user
     username = "pass_user"
     password = "old_password"
@@ -46,7 +44,7 @@ def test_change_password(db_session: Session):
     assert auth.verify_password("new_password_123", user.hashed_password)
 
 
-def test_delete_user(db_session: Session):
+def test_delete_user(client, db_session: Session):
     # Setup user with planet
     username = "del_user"
     user = models.User(username=username, email="del@test.com", hashed_password="pw")

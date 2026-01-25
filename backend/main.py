@@ -718,7 +718,7 @@ def send_fleet(
     # Get target planet
     target_planet = (
         db.query(models.Planet)
-        .filter(models.Planet.id == request.target_planet_id)
+        .filter(models.Planet.id == request_data.target_planet_id)
         .first()
     )
     if not target_planet:
@@ -730,7 +730,7 @@ def send_fleet(
         )
 
     # Attack: must target another player's planet
-    if request.mission_type == "attack":
+    if request_data.mission_type == "attack":
         if target_planet.owner_id == current_user.id:
             raise HTTPException(status_code=400, detail="Cannot attack your own planet")
 
@@ -742,31 +742,31 @@ def send_fleet(
     )
     available_ships = ships.count if ships else 0
 
-    if available_ships < request.ship_count:
+    if available_ships < request_data.ship_count:
         raise HTTPException(
             status_code=400,
-            detail=f"Not enough spaceships. Have {available_ships}, need {request.ship_count}",
+            detail=f"Not enough spaceships. Have {available_ships}, need {request_data.ship_count}",
         )
 
     # For transport: validate gold amount
     gold_carried = 0
-    if request.mission_type == "transport":
-        max_gold = request.ship_count * game_logic.SHIP_GOLD_CAPACITY
-        if request.gold_amount > max_gold:
+    if request_data.mission_type == "transport":
+        max_gold = request_data.ship_count * game_logic.SHIP_GOLD_CAPACITY
+        if request_data.gold_amount > max_gold:
             raise HTTPException(
                 status_code=400,
                 detail=f"Ships can carry max {max_gold} gold ({game_logic.SHIP_GOLD_CAPACITY} per ship)",
             )
-        if request.gold_amount > current_user.gold:
+        if request_data.gold_amount > current_user.gold:
             raise HTTPException(
                 status_code=400,
-                detail=f"Not enough gold. Have {current_user.gold}, want to send {request.gold_amount}",
+                detail=f"Not enough gold. Have {current_user.gold}, want to send {request_data.gold_amount}",
             )
-        gold_carried = request.gold_amount
+        gold_carried = request_data.gold_amount
         current_user.gold -= gold_carried
 
     # Deduct ships
-    ships.count -= request.ship_count
+    ships.count -= request_data.ship_count
 
     # Calculate travel time
     travel_time = game_logic.calculate_travel_time(planet, target_planet)
@@ -777,8 +777,8 @@ def send_fleet(
         owner_id=current_user.id,
         source_planet_id=planet.id,
         target_planet_id=target_planet.id,
-        mission_type=request.mission_type,
-        ship_count=request.ship_count,
+        mission_type=request_data.mission_type,
+        ship_count=request_data.ship_count,
         gold_carried=gold_carried,
         arrival_time=arrival_time,
         status="outbound",

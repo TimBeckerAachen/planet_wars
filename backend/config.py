@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     # Security
     frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
     enable_security_header: bool = True
+    limiter_enabled: bool = True
 
     class Config:
         env_file = ".env"
