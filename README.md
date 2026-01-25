@@ -117,3 +117,35 @@ npm test
 The project is configured for deployment on **Render** via **GitHub Actions**.
 - **CI**: Runs tests on every push/PR.
 - **CD**: Deploys to Render only after tests pass on the `main` branch.
+
+## AI-Assisted Development
+
+This project was developed with the assistance of **Google Deepmind's Antigravity**, an advanced agentic AI coding assistant.
+
+### Agentic Workflow
+The development followed an agentic workflow where the AI:
+1.  **Planned** tasks using `task.md` and `implementation_plan.md`.
+2.  **Executed** changes autonomously.
+3.  **Verified** results before requesting user review.
+
+### Model Context Protocol (MCP)
+Antigravity used the **Model Context Protocol (MCP)** to interact with the local development environment securely.
+-   **Tools**: The agent utilized tools like `view_file`, `write_to_file`, `run_command`, and `grep_search` to understand and modify the codebase.
+-   **Context**: The agent maintained context through the `.agent` directory configuration.
+
+### Agent Configuration (`.agent/`)
+The project contains specific configuration files for the AI agent:
+-   **`rules/`**: Defined project-specific constraints (e.g., "Use `uv` for Python", "Monorepo structure").
+-   **`skills/`**: Specialized capabilities available to the agent.
+-   **`workflows/`**: Pre-defined procedures for common tasks (e.g., `/implement-feature`).
+
+### Initial Prompt
+The project was scaffolded based on the following initial request:
+
+> I want to build a web application. My preffered language is python with fastAPI for the backend + postgreSQL.
+>
+> For the frontend I want to use React/Typescript + vite. For python I want to use uv for managing my dependencies.
+>
+> for ci/cd I want to use github actions. the code for frontend and backend should be in the same repository, but in different directories. I want tests for both frontend and backend that should run on github actions.
+>
+> Please setup the inital structure of the project with some dummy code for frontend and backend and tests and setup the ci/cd pipeline.
