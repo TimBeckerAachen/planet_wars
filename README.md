@@ -203,15 +203,35 @@ The entire system can be run using Docker, ensuring a consistent environment and
 ## Testing
 
 ### Running Backend Tests
+**Run all tests:**
 ```bash
 cd backend
 uv run pytest
 ```
 
+**Run Unit Tests:**
+```bash
+cd backend
+uv run pytest tests/unit
+```
+
+**Run Integration Tests:**
+```bash
+cd backend
+uv run pytest tests/integration
+```
+
 ### Running Frontend Tests
+**Run all tests:**
 ```bash
 cd frontend
 npm test
+```
+
+**Run Integration Tests:**
+```bash
+cd frontend
+npm test src/tests/integration
 ```
 
 ## Deployment & CI/CD
