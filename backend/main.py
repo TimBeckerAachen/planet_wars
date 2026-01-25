@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
@@ -12,13 +15,19 @@ import models
 import schemas
 from config import settings
 from database import engine, get_db
+from security import limiter, verify_client_source
 
 app = FastAPI(title="Planet Wars API")
+
+# Rate Limiter Setup
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify local/staging/prod URLs
+    allow_origins=[settings.frontend_url],  # Stricter CORS
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,8 +64,14 @@ import game_logic
     "/auth/signup",
     response_model=schemas.AuthResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(verify_client_source)],
 )
-def signup(user_data: schemas.UserSignupRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def signup(
+    request: Request,
+    user_data: schemas.UserSignupRequest,
+    db: Session = Depends(get_db),
+):
     """
     Register a new user and assign a planet.
     """
@@ -115,8 +130,14 @@ def signup(user_data: schemas.UserSignupRequest, db: Session = Depends(get_db)):
     )
 
 
-@app.put("/auth/password", response_model=schemas.UserResponse)
+@app.put(
+    "/auth/password",
+    response_model=schemas.UserResponse,
+    dependencies=[Depends(verify_client_source)],
+)
+@limiter.limit("5/minute")
 def change_password(
+    request: Request,
     payload: schemas.UserChangePasswordRequest,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
@@ -178,8 +199,14 @@ def delete_user(
 # ... login ...
 
 
-@app.get("/game/state", response_model=schemas.GameStateResponse)
+@app.get(
+    "/game/state",
+    response_model=schemas.GameStateResponse,
+    dependencies=[Depends(verify_client_source)],
+)
+@limiter.limit("60/minute")
 def get_game_state(
+    request: Request,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -300,8 +327,10 @@ def get_game_state(
     )
 
 
-@app.post("/game/build")
+@app.post("/game/build", dependencies=[Depends(verify_client_source)])
+@limiter.limit("20/minute")
 def build_building(
+    request: Request,
     building_name: str,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
@@ -446,8 +475,17 @@ def rename_planet(
     )
 
 
-@app.post("/auth/login", response_model=schemas.AuthResponse)
-def login(credentials: schemas.UserLoginRequest, db: Session = Depends(get_db)):
+@app.post(
+    "/auth/login",
+    response_model=schemas.AuthResponse,
+    dependencies=[Depends(verify_client_source)],
+)
+@limiter.limit("10/minute")
+def login(
+    request: Request,
+    credentials: schemas.UserLoginRequest,
+    db: Session = Depends(get_db),
+):
     """
     Authenticate a user and return JWT token
 
@@ -573,8 +611,10 @@ def get_building_details(
     return response
 
 
-@app.post("/game/produce")
+@app.post("/game/produce", dependencies=[Depends(verify_client_source)])
+@limiter.limit("20/minute")
 def produce_unit(
+    request: Request,
     building_id: int,
     unit_name: str,
     current_user: models.User = Depends(auth.get_current_user),
@@ -646,9 +686,15 @@ def produce_unit(
 # Fleet Mission Endpoints
 
 
-@app.post("/game/fleet/send", response_model=schemas.FleetMissionResponse)
+@app.post(
+    "/game/fleet/send",
+    response_model=schemas.FleetMissionResponse,
+    dependencies=[Depends(verify_client_source)],
+)
+@limiter.limit("10/minute")
 def send_fleet(
-    request: schemas.FleetSendRequest,
+    request: Request,
+    request_data: schemas.FleetSendRequest,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):

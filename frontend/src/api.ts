@@ -43,6 +43,7 @@ async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T>
     const token = getAuthToken();
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
+        'X-Client-Source': 'planet-wars-frontend',
     };
 
     // Merge with provided headers
