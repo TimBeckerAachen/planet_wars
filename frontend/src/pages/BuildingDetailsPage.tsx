@@ -133,6 +133,11 @@ export default function BuildingDetailsPage({ buildingId, onBack }: BuildingDeta
                                 Next Level: {details.level + 1} <br />
                                 Cost: <span style={{ color: '#ffd700' }}>{details.upgrade_cost} 💰</span> <br />
                                 Time: {details.upgrade_duration ? (details.upgrade_duration / 60).toFixed(0) : '?'} min
+                                {details.stat_label && (
+                                    <div style={{ marginTop: '0.2rem', color: '#93c5fd', fontSize: '0.9rem' }}>
+                                        {details.stat_label}: {details.stat_current} ➜ {details.stat_next}
+                                    </div>
+                                )}
                             </div>
                             <button
                                 onClick={handleUpgrade}

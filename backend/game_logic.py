@@ -475,3 +475,28 @@ def _create_message(db: Session, user_id: int, subject: str, body: str):
     """Create a message for a user."""
     message = models.Message(user_id=user_id, subject=subject, body=body)
     db.add(message)
+
+
+def get_building_comparison(name: str, level: int):
+    """
+    Returns a tuple (label, current_val_str, next_val_str) for UI display.
+    """
+    if name == "gold_mine":
+        # Current
+        cur_stats = get_building_stats(name, level)
+        cur_prod = cur_stats["production"] if cur_stats else 0
+
+        # Next
+        next_stats = get_building_stats(name, level + 1)
+        next_prod = next_stats["production"] if next_stats else 0
+
+        return "Production", f"{cur_prod}/hr", f"{next_prod}/hr"
+
+    elif name in ["space_ship_factory", "university"]:
+        # Speed multiplier. Stats logic: duration = base / level
+        # So effective speed is Proportional to Level.
+        cur_speed = level
+        next_speed = level + 1
+        return "Speed", f"{cur_speed}x", f"{next_speed}x"
+
+    return None, None, None

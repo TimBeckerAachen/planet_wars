@@ -37,6 +37,9 @@ export interface ConstructionOption {
     duration: number; // seconds
     production: number;
     level: number;
+    stat_label?: string;
+    stat_current?: string;
+    stat_next?: string;
 }
 
 export interface GameState {
@@ -64,6 +67,9 @@ export interface BuildingDetails extends Building {
     next_level_production_speed_bonus?: number;
     production_type?: string | null;
     production_finish_time?: string | null;
+    stat_label?: string;
+    stat_current?: string;
+    stat_next?: string;
 }
 
 export interface MapState {

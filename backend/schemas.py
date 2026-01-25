@@ -98,6 +98,9 @@ class BuildingDetailsResponse(BuildingResponse):
     production_options: list[ProductionOption] = []
     current_production_speed_bonus: Optional[float] = None
     next_level_production_speed_bonus: Optional[float] = None
+    stat_label: Optional[str] = None
+    stat_current: Optional[str] = None
+    stat_next: Optional[str] = None
 
 
 class UnitResponse(BaseModel):
@@ -116,6 +119,9 @@ class ConstructionOption(BaseModel):
     duration: int  # seconds
     production: int  # optional, if relevant
     level: int
+    stat_label: Optional[str] = None
+    stat_current: Optional[str] = None
+    stat_next: Optional[str] = None
 
 
 class GameStateResponse(BaseModel):

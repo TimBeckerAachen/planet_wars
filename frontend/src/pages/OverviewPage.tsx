@@ -336,6 +336,11 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
                                     <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>
                                         To Level {opt.level}
                                     </div>
+                                    {opt.stat_label && (
+                                        <div style={{ fontSize: '0.75rem', marginTop: '0.25rem', color: '#93c5fd' }}>
+                                            {opt.stat_label}: {opt.stat_current} ➜ {opt.stat_next}
+                                        </div>
+                                    )}
 
                                     <div style={{
                                         display: 'flex', justifyContent: 'space-between', marginTop: '0.8rem',

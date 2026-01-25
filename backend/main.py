@@ -210,6 +210,15 @@ def get_game_state(
                     duration=stats["duration"],  # seconds
                     production=stats.get("production", 0),
                     level=next_level,
+                    stat_label=game_logic.get_building_comparison(
+                        t, existing.level if existing else 0
+                    )[0],
+                    stat_current=game_logic.get_building_comparison(
+                        t, existing.level if existing else 0
+                    )[1],
+                    stat_next=game_logic.get_building_comparison(
+                        t, existing.level if existing else 0
+                    )[2],
                 )
             )
 
@@ -470,6 +479,14 @@ def get_building_details(
     if upgrade_stats:
         response.upgrade_cost = upgrade_stats["cost"]
         response.upgrade_duration = upgrade_stats["duration"]
+
+    # Calculate Comparison Stats
+    label, cur, next_ = game_logic.get_building_comparison(
+        building.name, building.level
+    )
+    response.stat_label = label
+    response.stat_current = cur
+    response.stat_next = next_
 
     # Calculate Production Options
     if building.name == "university":
