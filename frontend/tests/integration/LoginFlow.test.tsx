@@ -1,11 +1,11 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import App from '../../App';
-import * as api from '../../api';
+import App from '../../src/App';
+import * as api from '../../src/api';
 
 // Mock the API module
-vi.mock('../../api', () => ({
+vi.mock('../../src/api', () => ({
     loginUser: vi.fn(),
     signupUser: vi.fn(),
     getCurrentUser: vi.fn(),

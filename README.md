@@ -228,10 +228,16 @@ cd frontend
 npm test
 ```
 
+**Run Unit Tests:**
+```bash
+cd frontend
+npm test tests/unit
+```
+
 **Run Integration Tests:**
 ```bash
 cd frontend
-npm test src/tests/integration
+npm test tests/integration
 ```
 
 ## Deployment & CI/CD

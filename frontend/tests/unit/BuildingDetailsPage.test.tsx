@@ -1,19 +1,19 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import BuildingDetailsPage from './BuildingDetailsPage';
-import * as api from '../api';
+import BuildingDetailsPage from '../../src/pages/BuildingDetailsPage';
+import * as api from '../../src/api';
 
 // Mock GameContext
 const mockRefreshState = vi.fn();
 const mockUseGame = vi.fn();
 
-vi.mock('../GameContext', () => ({
+vi.mock('../../src/GameContext', () => ({
     useGame: () => mockUseGame(),
     GameProvider: ({ children }: any) => <div>{children}</div>
 }));
 
 // Mock API
-vi.mock('../api', () => ({
+vi.mock('../../src/api', () => ({
     getBuildingDetails: vi.fn(),
     buildBuilding: vi.fn(),
     produceUnit: vi.fn(),

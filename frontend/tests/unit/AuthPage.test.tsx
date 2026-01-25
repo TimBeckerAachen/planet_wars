@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import AuthPage from './AuthPage';
-import { AuthProvider } from './AuthContext';
+import AuthPage from '../../src/AuthPage';
+import { AuthProvider } from '../../src/AuthContext';
 import { vi } from 'vitest';
 
 // Mock the API calls
-vi.mock('./api', () => ({
+vi.mock('../../src/api', () => ({
     loginUser: vi.fn(),
     signupUser: vi.fn(),
     getCurrentUser: vi.fn(),

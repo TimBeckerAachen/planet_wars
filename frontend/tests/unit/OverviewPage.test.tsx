@@ -1,14 +1,14 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import OverviewPage from '../pages/OverviewPage';
+import OverviewPage from '../../src/pages/OverviewPage';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import * as GameContext from '../GameContext';
-import * as api from '../api';
+import * as GameContext from '../../src/GameContext';
+import * as api from '../../src/api';
 
 // Mock dependencies
-vi.mock('../GameContext');
-vi.mock('../api');
+vi.mock('../../src/GameContext');
+vi.mock('../../src/api');
 
 const mockGameState = {
     user: { id: 1, username: 'tester', email: 't@t.com', gold: 1000 },

@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
-import App from './App'
+import App from '../../src/App'
 
 // Mock the API module
-vi.mock('./api', () => ({
+vi.mock('../../src/api', () => ({
     getAuthToken: vi.fn(),
     getCurrentUser: vi.fn(),
     loginUser: vi.fn(),

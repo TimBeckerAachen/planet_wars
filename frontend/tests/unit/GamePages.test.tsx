@@ -1,20 +1,20 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import OverviewPage from './OverviewPage';
-import MapPage from './MapPage';
-import * as api from '../api';
+import OverviewPage from '../../src/pages/OverviewPage';
+import MapPage from '../../src/pages/MapPage';
+import * as api from '../../src/api';
 
 // Mock the GameContext
 const mockRefreshState = vi.fn();
 const mockUseGame = vi.fn();
 
-vi.mock('../GameContext', () => ({
+vi.mock('../../src/GameContext', () => ({
     useGame: () => mockUseGame(),
     GameProvider: ({ children }: any) => <div>{children}</div>
 }));
 
 // Mock the API module
-vi.mock('../api', () => ({
+vi.mock('../../src/api', () => ({
     getGameState: vi.fn(),
     buildBuilding: vi.fn(),
     getMap: vi.fn(),
