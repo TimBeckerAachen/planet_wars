@@ -213,12 +213,22 @@ def get_game_state(
                 )
             )
 
+    # 7. Get Unread Messages Count
+    unread_messages_count = (
+        db.query(models.Message)
+        .filter(
+            models.Message.user_id == current_user.id, models.Message.is_read == False
+        )
+        .count()
+    )
+
     return schemas.GameStateResponse(
         user=schemas.UserResponse.model_validate(current_user),
         planet=schemas.PlanetResponse.model_validate(planet),
         buildings=[schemas.BuildingResponse.model_validate(b) for b in buildings],
         units=[schemas.UnitResponse.model_validate(u) for u in units],
         construction_options=construction_options,
+        unread_messages_count=unread_messages_count,
     )
 
 
