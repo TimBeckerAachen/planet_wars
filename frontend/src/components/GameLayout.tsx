@@ -80,8 +80,14 @@ export default function GameLayout({ children, onNavigate, currentPage }: GameLa
                         <button
                             onClick={() => onNavigate('mailbox')}
                             style={{
-                                background: currentPage === 'mailbox' ? 'rgba(255,255,255,0.2)' : 'transparent',
-                                border: 'none',
+                                background: currentPage === 'mailbox' 
+                                    ? 'rgba(255,255,255,0.2)' 
+                                    : gameState && gameState.unread_messages_count > 0
+                                        ? 'rgba(239, 68, 68, 0.15)'
+                                        : 'transparent',
+                                border: gameState && gameState.unread_messages_count > 0
+                                    ? '1px solid #ef4444'
+                                    : 'none',
                                 color: 'white',
                                 padding: '0.5rem 1rem',
                                 borderRadius: '8px',

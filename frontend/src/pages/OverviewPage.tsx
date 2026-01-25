@@ -215,7 +215,7 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
                                     const isAttack = mission.mission_type === 'attack';
                                     
                                     return (
-                                        <div key={mission.id} style={{
+                                        <div key={`${mission.id}-${Math.floor(now / 1000)}`} style={{
                                             padding: '0.75rem',
                                             background: 'rgba(59, 130, 246, 0.1)',
                                             borderRadius: '6px',
@@ -259,7 +259,7 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
                                     const isAttack = fleet.mission_type === 'attack';
 
                                     return (
-                                        <div key={fleet.id} style={{
+                                        <div key={`${fleet.id}-${Math.floor(now / 1000)}`} style={{
                                             padding: '0.75rem',
                                             background: 'rgba(248, 113, 113, 0.1)',
                                             borderRadius: '6px',
