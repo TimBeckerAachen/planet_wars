@@ -8,10 +8,12 @@ import MapPage from './pages/MapPage';
 import BuildingDetailsPage from './pages/BuildingDetailsPage';
 import MailboxPage from './pages/MailboxPage';
 import PlanetDetailsPage from './pages/PlanetDetailsPage';
+import UnitDetailsPage from './pages/UnitDetailsPage';
 
 type PageState =
     | { view: 'overview' | 'map' | 'mailbox' }
     | { view: 'building', id: number }
+    | { view: 'unit', id: number }
     | { view: 'planet', id: number };
 
 function MainApp() {
@@ -46,7 +48,10 @@ function MainApp() {
             onNavigate={handleNav}
         >
             {pageState.view === 'overview' && (
-                <OverviewPage onBuildingClick={(id) => setPageState({ view: 'building', id })} />
+                <OverviewPage 
+                    onBuildingClick={(id) => setPageState({ view: 'building', id })} 
+                    onUnitClick={(id) => setPageState({ view: 'unit', id })}
+                />
             )}
 
             {pageState.view === 'map' && (
@@ -60,6 +65,13 @@ function MainApp() {
             {pageState.view === 'building' && (
                 <BuildingDetailsPage
                     buildingId={pageState.id}
+                    onBack={() => setPageState({ view: 'overview' })}
+                />
+            )}
+
+            {pageState.view === 'unit' && (
+                <UnitDetailsPage
+                    unitId={pageState.id}
                     onBack={() => setPageState({ view: 'overview' })}
                 />
             )}

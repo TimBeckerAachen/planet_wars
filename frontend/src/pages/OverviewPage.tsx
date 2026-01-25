@@ -5,9 +5,10 @@ import { FleetMissionsState } from '../types';
 
 interface OverviewPageProps {
     onBuildingClick: (id: number) => void;
+    onUnitClick: (id: number) => void;
 }
 
-export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
+export default function OverviewPage({ onBuildingClick, onUnitClick }: OverviewPageProps) {
     const { gameState, loading, refreshState } = useGame();
     const [fleetMissions, setFleetMissions] = useState<FleetMissionsState | null>(null);
 
@@ -192,10 +193,33 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
                 <div className="section">
                     <h3>Units</h3>
                     {units.length === 0 ? <p style={{ opacity: 0.5 }}>No units deployed.</p> : (
-                        <div className="card-list">
+                        <div className="card-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
                             {units.map(u => (
-                                <div key={u.id}>
-                                    {u.name}: {u.count}
+                                <div
+                                    key={u.id}
+                                    onClick={() => onUnitClick(u.id)}
+                                    style={{
+                                        padding: '1rem',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        borderRadius: '8px',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        cursor: 'pointer',
+                                        transition: 'background 0.2s',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        minHeight: '80px'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                >
+                                    <div style={{ fontWeight: 'bold', textTransform: 'capitalize', textAlign: 'center' }}>
+                                        {u.name.replace(/_/g, ' ')}
+                                    </div>
+                                    <div style={{ fontSize: '1.2rem', marginTop: '0.5rem', color: '#60a5fa', fontWeight: 'bold' }}>
+                                        {u.count}
+                                    </div>
                                 </div>
                             ))}
                         </div>
