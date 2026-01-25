@@ -214,11 +214,10 @@ def get_game_state(
             )
 
     # 7. Get Unread Messages Count
+    # FIX: is_read is Integer (0 or 1), so compare with 0, not False.
     unread_messages_count = (
         db.query(models.Message)
-        .filter(
-            models.Message.user_id == current_user.id, models.Message.is_read == False
-        )
+        .filter(models.Message.user_id == current_user.id, models.Message.is_read == 0)
         .count()
     )
 
