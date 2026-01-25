@@ -34,6 +34,45 @@ The system provides a comprehensive set of features for a space strategy game:
 ### 5. Communication
 - **Messages**: In-game notification system for battle reports and status updates.
 
+## System Architecture
+
+The project is structured as a **monorepo** containing both the backend service and the frontend application.
+
+### Architecture Diagram
+```mermaid
+graph TD
+    User[User Browser] -->|HTTP/REST| Nginx[Frontend Server (Nginx)]
+    User -->|HTTP/REST| API[Backend API (FastAPI)]
+    
+    subgraph "Docker Compose / Render"
+        Nginx -->|Serves Static Files| React[React App]
+        API -->|Reads/Writes| DB[(PostgreSQL)]
+    end
+```
+
+### Components
+
+#### 1. Frontend (UI Layer)
+-   **Tech**: React, TypeScript, Vite, Tailwind CSS.
+-   **Role**: A Single Page Application (SPA) that provides the interactive game interface.
+-   **Communication**: Consumes the Backend REST API for all game actions and state retrieval.
+
+#### 2. Backend (Service Layer)
+-   **Tech**: Python, FastAPI, SQLAlchemy, Pydantic.
+-   **Role**: The authoritative game server. Handles business logic (building upgrades, fleet travel calculations), user authentication (JWT), and data validation.
+-   **Dependency Management**: Uses `uv` for fast, reliable package management.
+
+#### 3. Database (Persistence Layer)
+-   **Tech**: PostgreSQL 15.
+-   **Role**: Stores persistent data including User accounts, Planet configurations, Buildings, Units, and active Fleet Missions.
+
+#### 4. Infrastructure & DevOps
+-   **Containerization**: Both services are containerized using **Docker**.
+    -   *Backend*: Optimized python-slim image.
+    -   *Frontend*: Multi-stage build (Node build -> Nginx runtime).
+-   **CI/CD**: **GitHub Actions** automates the pipeline:
+    -   *Test*: Runs `pytest` and `npm test` on every push.
+    -   *Deploy*: Pushes new versions to **Render** upon successful tests on `main`.
 ## Project Expectations & Technical Goals
 
 This project serves as a reference implementation for a modern, full-stack web application.
