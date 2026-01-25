@@ -30,6 +30,11 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
     const getMissionIcon = (type: string) => type === 'attack' ? '⚔️' : '📦';
     const getMissionLabel = (type: string) => type === 'attack' ? 'Attack' : 'Transport';
 
+    // Debug: Log when now updates
+    useEffect(() => {
+        console.log('OverviewPage - now updated:', new Date(now).toLocaleTimeString());
+    }, [now]);
+
     // Construction Countdown Effect
     useEffect(() => {
         if (!gameState) return;

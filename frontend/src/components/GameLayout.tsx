@@ -18,6 +18,10 @@ export default function GameLayout({ children, onNavigate, currentPage }: GameLa
     // Helper formats numbers with commas
     const formatGold = (amount: number) => Math.floor(amount).toLocaleString();
 
+    // Debug logging
+    console.log('GameLayout - gameState:', gameState);
+    console.log('GameLayout - unread_messages_count:', gameState?.unread_messages_count);
+
     return (
         <div className="game-layout" style={{
             minHeight: '100vh',
