@@ -32,6 +32,15 @@ class UserLoginRequest(BaseModel):
     password: str = Field(..., description="User password")
 
 
+class UserChangePasswordRequest(BaseModel):
+    """Schema for changing password"""
+
+    old_password: str = Field(..., description="Current password")
+    new_password: str = Field(
+        ..., min_length=8, max_length=100, description="New password (min 8 characters)"
+    )
+
+
 class UserResponse(BaseModel):
     """Schema for user data response (excludes password)"""
 

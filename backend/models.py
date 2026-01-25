@@ -33,7 +33,7 @@ class Planet(Base):
     __tablename__ = "planets"
 
     id = Column(Integer, primary_key=True, index=True)
-    owner_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    owner_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=True)
     x = Column(Integer, nullable=False)
     y = Column(Integer, nullable=False)
     name = Column(String, default="Colony", unique=True, nullable=False)

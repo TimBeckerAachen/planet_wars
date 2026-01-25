@@ -104,4 +104,21 @@ def run_auto_migrations():
         except Exception as e:
             print(f"Migrating warning: Could not create unique index: {e}")
 
+    # START: Migration for Nullable Owner
+    if inspector.has_table("planets"):
+        with engine.begin() as conn:
+            # Basic attempt for Postgres/Generic
+            print("Migrating: Attempting to make planets.owner_id nullable...")
+            try:
+                # Postgres syntax
+                conn.execute(
+                    text("ALTER TABLE planets ALTER COLUMN owner_id DROP NOT NULL")
+                )
+            except Exception as e:
+                # SQLite doesn't support ALTER COLUMN DROP NOT NULL easily without a full table rebuild.
+                # We will just catch the error and print a warning for SQLite dev envs.
+                print(
+                    f"Migrating warning: Could not make owner_id nullable (likely SQLite): {e}"
+                )
+
     print("Auto-migration check complete.")

@@ -5,8 +5,8 @@ import { logout } from '../api';
 interface GameLayoutProps {
     user: User;
     children: React.ReactNode;
-    onNavigate: (page: 'overview' | 'map' | 'mailbox') => void;
-    currentPage: 'overview' | 'map' | 'mailbox';
+    onNavigate: (page: 'overview' | 'map' | 'mailbox' | 'settings') => void;
+    currentPage: 'overview' | 'map' | 'mailbox' | 'settings';
 }
 
 import { useGame } from '../GameContext';
@@ -143,6 +143,22 @@ export default function GameLayout({ children, onNavigate, currentPage }: GameLa
                             width: '150px',
                             zIndex: 100
                         }}>
+                             <button
+                                onClick={() => { setShowSettings(false); onNavigate('settings'); }}
+                                style={{
+                                    display: 'block',
+                                    width: '100%',
+                                    padding: '0.75rem 1rem',
+                                    textAlign: 'left',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'white',
+                                    cursor: 'pointer',
+                                    borderBottom: '1px solid rgba(255,255,255,0.1)'
+                                }}
+                            >
+                                Settings
+                            </button>
                             <button
                                 onClick={() => { logout(); window.location.reload(); }}
                                 style={{

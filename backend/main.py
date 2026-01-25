@@ -115,6 +115,66 @@ def signup(user_data: schemas.UserSignupRequest, db: Session = Depends(get_db)):
     )
 
 
+@app.put("/auth/password", response_model=schemas.UserResponse)
+def change_password(
+    payload: schemas.UserChangePasswordRequest,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Change user password.
+    """
+    if not auth.verify_password(payload.old_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid old password"
+        )
+
+    current_user.hashed_password = auth.hash_password(payload.new_password)
+    db.commit()
+    db.refresh(current_user)
+    return schemas.UserResponse.model_validate(current_user)
+
+
+@app.delete("/auth/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Delete the current user account.
+    Planets owned by the user will be orphaned (owner_id = None).
+    """
+    # Orphan planets
+    planets = (
+        db.query(models.Planet).filter(models.Planet.owner_id == current_user.id).all()
+    )
+    for p in planets:
+        p.owner_id = None  # type: ignore (nullable allowed now)
+
+    # Delete User
+    # Note: Dependencies? Messages, FleetMissions?
+    # FleetMissions: cascade delete or also orphan?
+    # If we delete user, foreign keys might complain if not CASCADE.
+    # Models:
+    # Message: user_id (ForeignKey) -> likely need to delete these messages.
+    # FleetMission: owner_id (ForeignKey) -> delete active missions?
+
+    # Let's delete related data to handle FK constraints manually if not set on DB
+    db.query(models.Message).filter(models.Message.user_id == current_user.id).delete()
+    db.query(models.FleetMission).filter(
+        models.FleetMission.owner_id == current_user.id
+    ).delete()
+
+    # Commit changes to auxiliary tables
+    db.commit()
+
+    # Now delete user
+    db.delete(current_user)
+    db.commit()
+
+    return None
+
+
 # ... login ...
 
 

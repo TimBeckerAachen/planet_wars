@@ -9,11 +9,13 @@ import BuildingDetailsPage from './pages/BuildingDetailsPage';
 import MailboxPage from './pages/MailboxPage';
 import PlanetDetailsPage from './pages/PlanetDetailsPage';
 import UnitDetailsPage from './pages/UnitDetailsPage';
+import SettingsPage from './pages/SettingsPage';
 
 type PageState =
-    | { view: 'overview' | 'map' | 'mailbox' }
+    | { view: 'overview' | 'map' | 'mailbox' | 'settings' }
     | { view: 'building', id: number }
     | { view: 'unit', id: number }
+
     | { view: 'planet', id: number };
 
 function MainApp() {
@@ -34,7 +36,9 @@ function MainApp() {
     if (!user) return <AuthPage />;
 
     // Helper for GameLayout nav
-    const handleNav = (page: 'overview' | 'map' | 'mailbox') => setPageState({ view: page });
+    const handleNav = (page: 'overview' | 'map' | 'mailbox' | 'settings') => {
+        setPageState({ view: page });
+    };
     const getCurrentPage = () => {
         if (pageState.view === 'map' || pageState.view === 'planet') return 'map';
         if (pageState.view === 'mailbox') return 'mailbox';
@@ -80,6 +84,13 @@ function MainApp() {
                 <PlanetDetailsPage
                     planetId={pageState.id}
                     onBack={() => setPageState({ view: 'map' })}
+                />
+            )}
+
+            {pageState.view === 'settings' && (
+                <SettingsPage
+                    user={user}
+                    onBack={() => setPageState({ view: 'overview' })}
                 />
             )}
         </GameLayout>

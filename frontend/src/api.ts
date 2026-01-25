@@ -238,3 +238,22 @@ export async function deleteMessage(messageId: number): Promise<{ status: string
         method: 'DELETE'
     });
 }
+
+/**
+ * Change user password
+ */
+export async function changePassword(oldPassword: string, newPassword: string): Promise<import('./types').User> {
+    return apiRequest<import('./types').User>('/auth/password', {
+        method: 'PUT',
+        body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
+    });
+}
+
+/**
+ * Delete current user account
+ */
+export async function deleteUser(): Promise<void> {
+    return apiRequest<void>('/auth/me', {
+        method: 'DELETE'
+    });
+}
