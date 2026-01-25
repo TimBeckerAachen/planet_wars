@@ -243,17 +243,24 @@ export default function PlanetDetailsPage({ planetId, onBack }: PlanetDetailsPag
 
                     {/* 3. My Outgoing (General) - Only shown on My Planet Details to show what's leaving */}
                     {isOwnPlanet && fleetMissions?.outgoing.map(mission => {
-                         const arrival = new Date(mission.arrival_time).getTime();
-                         const secsRemaining = Math.max(0, Math.floor((arrival - now) / 1000));
+                         const targetTimeStr = mission.status === 'returning' && mission.return_time 
+                                ? mission.return_time 
+                                : mission.arrival_time;
+                         const targetTime = new Date(targetTimeStr).getTime();
+                         const secsRemaining = Math.max(0, Math.floor((targetTime - now) / 1000));
                          const isAttack = mission.mission_type === 'attack';
+                         const isReturning = mission.status === 'returning';
+                         
                          return (
                              <div key={mission.id} style={missionCardStyle('info')}>
                                  <div>
                                      <div style={{ fontWeight: 'bold', color: isAttack ? '#ef4444' : '#60a5fa' }}>
                                          {isAttack ? '⚔️ Outgoing Attack' : '📦 Outgoing Transport'}
+                                         {isReturning && ' (Returning)'}
                                      </div>
                                      <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-                                         {mission.ship_count} ships → {mission.target_planet_name || `Planet ${mission.target_planet_id}`}
+                                         {mission.ship_count} ships 
+                                         {isReturning ? ' → Home' : ` → ${mission.target_planet_name || `Planet ${mission.target_planet_id}`}`}
                                      </div>
                                  </div>
                                  <div style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>

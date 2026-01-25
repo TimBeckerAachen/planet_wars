@@ -30,11 +30,6 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
     const getMissionIcon = (type: string) => type === 'attack' ? '⚔️' : '📦';
     const getMissionLabel = (type: string) => type === 'attack' ? 'Attack' : 'Transport';
 
-    // Debug: Log when now updates
-    useEffect(() => {
-        console.log('OverviewPage - now updated:', new Date(now).toLocaleTimeString());
-    }, [now]);
-
     // Construction Countdown Effect
     useEffect(() => {
         if (!gameState) return;
@@ -215,9 +210,15 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
                             <div style={{ marginBottom: '1rem' }}>
                                 <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#60a5fa' }}>Outgoing</h4>
                                 {fleetMissions.outgoing.map(mission => {
-                                    const arrival = new Date(mission.arrival_time).getTime();
-                                    const secsRemaining = Math.max(0, Math.floor((arrival - now) / 1000));
+                                    // Handle return time if returning
+                                    const targetTimeStr = mission.status === 'returning' && mission.return_time 
+                                        ? mission.return_time 
+                                        : mission.arrival_time;
+                                        
+                                    const targetTime = new Date(targetTimeStr).getTime();
+                                    const secsRemaining = Math.max(0, Math.floor((targetTime - now) / 1000));
                                     const isAttack = mission.mission_type === 'attack';
+                                    const isReturning = mission.status === 'returning';
                                     
                                     return (
                                         <div key={`${mission.id}-${Math.floor(now / 1000)}`} style={{
@@ -233,9 +234,14 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                                                 <span style={{ fontWeight: 'bold', color: isAttack ? '#ef4444' : '#60a5fa' }}>
                                                     {getMissionIcon(mission.mission_type)} {getMissionLabel(mission.mission_type)}
+                                                    {isReturning && ' (Returning)'}
                                                 </span>
                                                 <span style={{ fontSize: '0.9rem', opacity: 0.9 }}>
-                                                    {mission.ship_count} ships ➔ {mission.target_planet_name || `Planet ${mission.target_planet_id}`}
+                                                    {mission.ship_count} ships 
+                                                    {isReturning 
+                                                        ? ` ➔ Home` 
+                                                        : ` ➔ ${mission.target_planet_name || `Planet ${mission.target_planet_id}`}`
+                                                    }
                                                 </span>
                                             </div>
                                             <span style={{ 
@@ -246,9 +252,7 @@ export default function OverviewPage({ onBuildingClick }: OverviewPageProps) {
                                                 padding: '0.2rem 0.5rem',
                                                 borderRadius: '4px'
                                             }}>
-                                                {mission.status === 'in_transit' 
-                                                    ? `${formatTime(secsRemaining)}`
-                                                    : mission.status}
+                                                {formatTime(secsRemaining)}
                                             </span>
                                         </div>
                                     );

@@ -18,10 +18,6 @@ export default function GameLayout({ children, onNavigate, currentPage }: GameLa
     // Helper formats numbers with commas
     const formatGold = (amount: number) => Math.floor(amount).toLocaleString();
 
-    // Debug logging
-    console.log('GameLayout - gameState:', gameState);
-    console.log('GameLayout - unread_messages_count:', gameState?.unread_messages_count);
-
     return (
         <div className="game-layout" style={{
             minHeight: '100vh',
@@ -86,32 +82,34 @@ export default function GameLayout({ children, onNavigate, currentPage }: GameLa
                             style={{
                                 background: currentPage === 'mailbox' 
                                     ? 'rgba(255,255,255,0.2)' 
-                                    : gameState && gameState.unread_messages_count > 0
-                                        ? 'rgba(239, 68, 68, 0.15)'
+                                    : (gameState && gameState.unread_messages_count > 0)
+                                        ? 'rgba(239, 68, 68, 0.5)'
                                         : 'transparent',
-                                border: gameState && gameState.unread_messages_count > 0
-                                    ? '1px solid #ef4444'
+                                border: (gameState && gameState.unread_messages_count > 0)
+                                    ? '2px solid #ef4444' 
                                     : 'none',
                                 color: 'white',
                                 padding: '0.5rem 1rem',
                                 borderRadius: '8px',
                                 cursor: 'pointer',
-                                position: 'relative'
+                                position: 'relative',
+                                fontWeight: (gameState && gameState.unread_messages_count > 0) ? 'bold' : 'normal'
                             }}
                         >
                             📬 Mailbox
                             {gameState && gameState.unread_messages_count > 0 && (
                                 <span style={{
                                     position: 'absolute',
-                                    top: '-5px',
-                                    right: '-5px',
-                                    background: '#ef4444',
+                                    top: '-8px',
+                                    right: '-8px',
+                                    background: '#ff0000',
                                     color: 'white',
-                                    fontSize: '0.7em',
+                                    fontSize: '0.75rem',
                                     padding: '2px 6px',
                                     borderRadius: '10px',
                                     fontWeight: 'bold',
-                                    border: '1px solid #0f0c29'
+                                    border: '2px solid #0f0c29',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
                                 }}>
                                     {gameState.unread_messages_count}
                                 </span>
