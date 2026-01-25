@@ -1,6 +1,13 @@
 # Planet Wars
 
+
 **Planet Wars** is a persistent browser-based strategy game where players manage resources, constructs buildings, and command fleets to compete for dominance in a galaxy.
+
+## Live Deployment
+
+- **Frontend Application**: [https://planetwars-frontend.onrender.com](https://planetwars-frontend.onrender.com)
+- **Backend API Docs**: [https://planetwars-backend.onrender.com/docs](https://planetwars-backend.onrender.com/docs)
+
 
 ## The Problem
 Players need a persistent, competitive environment to test strategic resource management and fleet command skills against others in real-time. The game solves this by providing a stateful world where actions (like building construction or fleet travel) take real time to complete, requiring long-term planning and coordination.
@@ -73,6 +80,22 @@ graph TD
 -   **CI/CD**: **GitHub Actions** automates the pipeline:
     -   *Test*: Runs `pytest` and `npm test` on every push.
     -   *Deploy*: Pushes new versions to **Render** upon successful tests on `main`.
+
+## Quality Assurance & Standards
+
+### API Contract (OpenAPI)
+The **OpenAPI specification** serves as the strict contract between Frontend and Backend.
+-   **Source of Truth**: The API spec is generated from the backend models but serves as the definitive guide for frontend integration.
+-   **Alignment**: The specification fully reflects the frontend requirements, ensuring seamless data exchange.
+
+### Frontend
+-   **Functional & Structured**: The codebase is organized by feature (Pages, Components) and follows modern React/Vite best practices.
+-   **Testing**: Tests cover core logic (unit tests) and are run via `npm test`. Instructions are provided in the [Testing](#testing) section.
+
+### Backend
+-   **Structured Implementation**: The backend is organized into clear modules (`models`, `schemas`, `api`, `game_logic`).
+-   **OpenAPI Adherence**: The implementation strictly follows the defined Pydantic schemas and API routes.
+-   **Testing**: Comprehensive `pytest` coverage ensures core functionality (Game Logic, Auth, State) is reliable.
 ## Project Expectations & Technical Goals
 
 This project serves as a reference implementation for a modern, full-stack web application.
@@ -99,6 +122,20 @@ This project serves as a reference implementation for a modern, full-stack web a
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS
 - **Testing**: Vitest + React Testing Library
+
+## Database Integration
+
+The system includes a fully integrated database layer designed for flexibility and robustness.
+
+- **Dual-Environment Support**:
+    - **Development**: Defaults to **SQLite** (`test.db`) for zero-conf local development.
+    - **Production**: Seamlessly switches to **PostgreSQL** via the `DATABASE_URL` environment variable.
+- **Schema Management**:
+    - Uses **SQLAlchemy** for ORM-based model definitions.
+    - Includes a custom automatic migration script (`auto_migrate.py`) that handles schema updates on application startup.
+- **Documentation**:
+    - Database schemas are defined in `backend/models.py`.
+    - Pydantic models for API validation are in `backend/schemas.py`.
 
 ## Setup & Installation
 
@@ -137,6 +174,32 @@ This project serves as a reference implementation for a modern, full-stack web a
    ```
    The application will be available at `http://localhost:5173`.
 
+## Running with Docker
+
+The entire system can be run using Docker, ensuring a consistent environment and easy deployment.
+
+### Prerequisites
+- Docker & Docker Compose
+
+### Instructions
+
+1. **Build and Start Services**:
+   Run the following command from the root directory:
+   ```bash
+   docker-compose up --build
+   ```
+
+2. **Access the Application**:
+   - **Frontend**: `http://localhost:80` (Served via Nginx)
+   - **Backend API**: `http://localhost:8000`
+   - **API Documentation**: `http://localhost:8000/docs`
+
+3. **Stop Services**:
+   ```bash
+   docker-compose down
+   ```
+   *Note: This will preserve database data in the `postgres_data` volume.*
+
 ## Testing
 
 ### Running Backend Tests
@@ -151,11 +214,26 @@ cd frontend
 npm test
 ```
 
-## Deployment
+## Deployment & CI/CD
 
-The project is configured for deployment on **Render** via **GitHub Actions**.
-- **CI**: Runs tests on every push/PR.
-- **CD**: Deploys to Render only after tests pass on the `main` branch.
+The project is configured for automated deployment on **Render** via **GitHub Actions**, ensuring a robust and reproducible delivery pipeline.
+
+### CI/CD Pipeline
+The pipeline (`.github/workflows/deploy.yml`) acts as a strict quality gate:
+
+1.  **Automated Testing**: On every push or pull request to `main`, the system runs:
+    -   **Backend**: `pytest` (with a sidecar PostgreSQL service).
+    -   **Frontend**: `npm test` (Vitest).
+2.  **Deployment**:
+    -   Deployment to Render is **only** triggered if *all* tests pass.
+    -   This prevents broken code from reaching the production environment.
+
+### Reproducibility
+The system is designed to be fully reproducible:
+-   **Local Development**: `docker-compose up --build` brings up an identical stack to production (Nginx + API + Postgres).
+-   **Infrastructure**: `render.yaml` defines the production infrastructure as code.
+-   **Environment**: Dependencies are strictly pinned via `uv.lock` (Python) and `package-lock.json` (Node).
+
 
 ## AI-Assisted Development
 
