@@ -8,7 +8,7 @@
 - **Frontend Application**: [https://planetwars-frontend.onrender.com](https://planetwars-frontend.onrender.com)
 - **Backend API Docs**: [https://planetwars-backend.onrender.com/docs](https://planetwars-backend.onrender.com/docs)
 
-Note: You might have to start both services independently if render terminated them due to inactivity. 
+**Note:** You might have to start both services independently if render terminated them due to inactivity. 
 
 ## The Problem
 Players need a persistent, competitive environment to test strategic resource management and fleet command skills against others in real-time. The game solves this by providing a stateful world where actions (like building construction or fleet travel) take real time to complete, requiring long-term planning and coordination.
@@ -49,8 +49,8 @@ The project is structured as a **monorepo** containing both the backend service 
 ### Architecture Diagram
 ```mermaid
 graph TD
-    User[User Browser] -->|HTTP/REST| Nginx[Frontend Server (Nginx)]
-    User -->|HTTP/REST| API[Backend API (FastAPI)]
+    User[User Browser] -->|HTTP/REST| Nginx["Frontend Server (Nginx)"]
+    User -->|HTTP/REST| API["Backend API (FastAPI)"]
     
     subgraph "Docker Compose / Render"
         Nginx -->|Serves Static Files| React[React App]
@@ -282,6 +282,8 @@ The project contains specific configuration files for the AI agent:
 -   **`rules/`**: Defined project-specific constraints (e.g., "Use `uv` for Python", "Monorepo structure").
 -   **`skills/`**: Specialized capabilities available to the agent.
 -   **`workflows/`**: Pre-defined procedures for common tasks (e.g., `/implement-feature`).
+
+**Note:** This is similar to AGENTS.md file.
 
 ### Initial Prompt
 The project was scaffolded based on the following initial request:
