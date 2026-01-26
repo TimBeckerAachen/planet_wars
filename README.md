@@ -12,9 +12,7 @@
 
 ## Live Demo
 
-<video src="docs/files/game_demo.mp4" controls="controls" style="max-width: 100%;">
-  Your browser does not support the video tag.
-</video>
+[Watch the Game Demo](docs/files/game_demo.mp4)
 
 ## The Problem
 Players need a persistent, competitive environment to test strategic resource management and fleet command skills against others in real-time. The game solves this by providing a stateful world where actions (like building construction or fleet travel) take real time to complete, requiring long-term planning and coordination.
